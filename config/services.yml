@@ -1,0 +1,224 @@
+services:
+  _defaults:
+    public: true
+    autowire: true
+    autoconfigure: true
+
+  # REPOSITORIES
+  jca_locationdevis.repository.quote_repository:
+    class: 'Jca\JcaLocationdevis\Repository\QuoteRepository'
+    factory: ['@doctrine.orm.entity_manager', getRepository]
+    arguments:
+      - Jca\JcaLocationdevis\Entity\Quote
+    tags:
+      - { name: doctrine.repository_service }
+
+  jca_locationdevis.repository.quote_setting_repository:
+    class: 'Jca\JcaLocationdevis\Repository\QuoteSettingRepository'
+    factory: ['@doctrine.orm.entity_manager', getRepository]
+    arguments:
+      - Jca\JcaLocationdevis\Entity\QuoteSetting
+    tags:
+      - { name: doctrine.repository_service }
+
+  jca_locationdevis.repository.rental_configuration_repository:
+    class: 'Jca\JcaLocationdevis\Repository\RentalConfigurationRepository'
+    factory: ['@doctrine.orm.entity_manager', getRepository]
+    arguments:
+      - Jca\JcaLocationdevis\Entity\RentalConfiguration
+    tags:
+      - { name: doctrine.repository_service }
+
+  jca_locationdevis.repository.quote_customer_repository:
+    class: 'Jca\JcaLocationdevis\Repository\QuoteCustomerRepository'
+    factory: ['@doctrine.orm.entity_manager', getRepository]
+    arguments:
+      - Jca\JcaLocationdevis\Entity\QuoteCustomer
+    tags:
+      - { name: doctrine.repository_service }
+
+  jca_locationdevis.repository.quote_item_repository:
+    class: 'Jca\JcaLocationdevis\Repository\QuoteItemRepository'
+    factory: ['@doctrine.orm.entity_manager', getRepository]
+    arguments:
+      - Jca\JcaLocationdevis\Entity\QuoteItem
+    tags:
+      - { name: doctrine.repository_service }
+
+  jca_locationdevis.repository.product_rental_availability_repository:
+    class: 'Jca\JcaLocationdevis\Repository\ProductRentalAvailabilityRepository'
+    factory: ['@doctrine.orm.entity_manager', getRepository]
+    public: true
+    arguments:
+      - Jca\JcaLocationdevis\Entity\ProductRentalAvailability
+    tags:
+      - { name: doctrine.repository_service }
+
+  # QUERY HANDLERS
+  jca_locationdevis.query.handler.get_quote_setting_handler:
+    class: 'Jca\JcaLocationdevis\QueryHandler\GetQuoteSettingHandler'
+    arguments:
+      - '@jca_locationdevis.repository.quote_setting_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Query\GetQuoteSettingQuery }
+
+  jca_locationdevis.query.handler.list_rental_configuration_handler:
+    class: 'Jca\JcaLocationdevis\QueryHandler\ListRentalConfigurationHandler'
+    arguments:
+      - '@jca_locationdevis.repository.rental_configuration_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Query\ListRentalConfigurationQuery }
+
+  jca_locationdevis.query.handler.list_product_rental_availability_handler:
+    class: 'Jca\JcaLocationdevis\QueryHandler\ListProductRentalAvailabilityHandler'
+    arguments:
+      - '@jca_locationdevis.repository.product_rental_availability_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Query\ListProductRentalAvailabilityQuery }
+
+  jca_locationdevis.query.handler.list_quotes_handler:
+    class: 'Jca\JcaLocationdevis\QueryHandler\ListQuotesHandler'
+    arguments:
+      - '@jca_locationdevis.repository.quote_repository'
+      - '@jca_locationdevis.repository.quote_item_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Query\ListQuotesQuery }
+
+  jca_locationdevis.query.handler.get_quote_with_items_handler:
+    class: 'Jca\JcaLocationdevis\QueryHandler\GetQuoteWithItemsHandler'
+    arguments:
+      - '@jca_locationdevis.repository.quote_repository'
+      - '@jca_locationdevis.repository.quote_item_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Query\GetQuoteWithItemsQuery }
+
+  # COMMAND HANDLERS - QUOTE
+  jca_locationdevis.command.handler.create_quote:
+    class: 'Jca\JcaLocationdevis\CommandHandler\CreateQuoteHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+      - '@jca_locationdevis.repository.quote_repository'
+      - '@jca_locationdevis.repository.quote_setting_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\CreateQuoteCommand }
+
+  jca_locationdevis.command.handler.update_quote:
+    class: 'Jca\JcaLocationdevis\CommandHandler\UpdateQuoteHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+      - '@jca_locationdevis.repository.quote_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\UpdateQuoteCommand }
+
+  jca_locationdevis.command.handler.update_quote_status:
+    class: 'Jca\JcaLocationdevis\CommandHandler\UpdateQuoteStatusHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+      - '@jca_locationdevis.repository.quote_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\UpdateQuoteStatusCommand }
+
+  jca_locationdevis.command.handler.delete_quote:
+    class: 'Jca\JcaLocationdevis\CommandHandler\DeleteQuoteHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+      - '@jca_locationdevis.repository.quote_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\DeleteQuoteCommand }
+
+  # COMMAND HANDLERS - QUOTE SETTING
+  jca_locationdevis.command.handler.create_quote_setting:
+    class: 'Jca\JcaLocationdevis\CommandHandler\CreateQuoteSettingHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\CreateQuoteSettingCommand }
+
+  jca_locationdevis.command.handler.update_quote_setting:
+    class: 'Jca\JcaLocationdevis\CommandHandler\UpdateQuoteSettingHandler'
+    arguments:
+      - '@jca_locationdevis.repository.quote_setting_repository'
+      - '@prestashop.core.command_bus'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\UpdateQuoteSettingCommand }
+
+  jca_locationdevis.command.handler.delete_quote_setting:
+    class: 'Jca\JcaLocationdevis\CommandHandler\DeleteQuoteSettingHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+      - '@jca_locationdevis.repository.quote_setting_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\DeleteQuoteSettingCommand }
+
+  # COMMAND HANDLERS - RENTAL CONFIGURATION
+  jca_locationdevis.command.handler.create_rental_configuration:
+    class: 'Jca\JcaLocationdevis\CommandHandler\CreateRentalConfigurationHandler'
+    arguments:
+      - '@jca_locationdevis.repository.rental_configuration_repository'
+      - '@prestashop.core.command_bus'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\CreateRentalConfigurationCommand }
+
+  jca_locationdevis.command.handler.update_rental_configuration:
+    class: 'Jca\JcaLocationdevis\CommandHandler\UpdateRentalConfigurationHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+      - '@jca_locationdevis.repository.rental_configuration_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\UpdateRentalConfigurationCommand }
+
+  jca_locationdevis.command.handler.delete_rental_configuration:
+    class: 'Jca\JcaLocationdevis\CommandHandler\DeleteRentalConfigurationHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+      - '@jca_locationdevis.repository.rental_configuration_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\DeleteRentalConfigurationCommand }
+
+  # COMMAND HANDLERS - PRODUCT RENTAL AVAILABILITY
+  jca_locationdevis.command.handler.create_product_rental_availability:
+    class: 'Jca\JcaLocationdevis\CommandHandler\CreateProductRentalAvailabilityHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\CreateProductRentalAvailabilityCommand }
+
+  jca_locationdevis.command.handler.update_product_rental_availability:
+    class: 'Jca\JcaLocationdevis\CommandHandler\UpdateProductRentalAvailabilityHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+      - '@jca_locationdevis.repository.product_rental_availability_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\UpdateProductRentalAvailabilityCommand }
+
+  jca_locationdevis.command.handler.delete_product_rental_availability:
+    class: 'Jca\JcaLocationdevis\CommandHandler\DeleteProductRentalAvailabilityHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+      - '@jca_locationdevis.repository.product_rental_availability_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\DeleteProductRentalAvailabilityCommand }
+
+  # COMMAND HANDLERS - QUOTE CUSTOMER
+  jca_locationdevis.command.handler.create_quote_customer:
+    class: 'Jca\JcaLocationdevis\CommandHandler\CreateQuoteCustomerHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\CreateQuoteCustomerCommand }
+
+  jca_locationdevis.command.handler.update_quote_customer:
+    class: 'Jca\JcaLocationdevis\CommandHandler\UpdateQuoteCustomerHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+      - '@jca_locationdevis.repository.quote_customer_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\UpdateQuoteCustomerCommand }
+
+  jca_locationdevis.command.handler.delete_quote_customer:
+    class: 'Jca\JcaLocationdevis\CommandHandler\DeleteQuoteCustomerHandler'
+    arguments:
+      - '@doctrine.orm.entity_manager'
+      - '@jca_locationdevis.repository.quote_customer_repository'
+    tags:
+      - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\DeleteQuoteCustomerCommand }

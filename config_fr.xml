@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>jca_locationdevis</name>
+    <displayName><![CDATA[JCA Location Devis]]></displayName>
+    <version><![CDATA[1.0.0]]></version>
+    <description><![CDATA[Module de gestion des offres de location avec calcul automatique des mensualit&eacute;s et de devis]]></description>
+    <author><![CDATA[Jcadev]]></author>
+    <tab><![CDATA[pricing_promotion]]></tab>
+	<confirmUninstall><![CDATA[Êtes-vous sûr de vouloir désinstaller ce module ?]]></confirmUninstall>
+    <is_configurable>0</is_configurable>
+    <need_instance>0</need_instance>
+</module>

@@ -1,0 +1,17 @@
+jca_locationdevis:
+  path: /jca_locationdevis
+  methods: [GET, POST]
+  defaults:
+    _controller: 'Jca\JcaLocationdevis\Controller\AdminJcaLocationdevisController::indexAction'
+    disable_module_prefix: true
+    legacy_controller: "AdminJcaLocationdevis"
+    _legacy_link: "AdminJcaLocationdevis"
+
+jca_locationdevis_handle_action:
+  path: /jca_locationdevis/handle
+  methods: [GET, POST]
+  defaults:
+    _controller: 'Jca\JcaLocationdevis\Controller\AdminJcaLocationdevisController::handleAction'
+    disable_module_prefix: true
+    legacy_controller: "AdminJcaLocationdevis"
+    _legacy_link: "AdminJcaLocationdevis"

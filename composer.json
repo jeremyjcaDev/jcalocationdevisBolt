@@ -1,0 +1,21 @@
+{
+  "name": "jca/jca_locationdevis",
+  "description": "Module PrestaShop pour la configuration des devis et locations",
+  "type": "prestashop-module",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "JCA",
+      "email": "contact@jca.fr"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Jca\\JcaLocationdevis\\": "src/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}
