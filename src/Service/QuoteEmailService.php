@@ -75,11 +75,15 @@ class QuoteEmailService
             $fromEmail = $settings['email_sender_email'] ?? Configuration::get('PS_SHOP_EMAIL');
             $replyTo = $settings['email_reply_to'] ?? $fromEmail;
 
+            $templateVars = [
+                '{content}' => $html
+            ];
+
             $result = Mail::Send(
                 (int)$this->context->language->id,
                 'custom',
                 $subject,
-                [],
+                $templateVars,
                 $to,
                 null,
                 $fromEmail,
@@ -88,9 +92,7 @@ class QuoteEmailService
                 null,
                 dirname(__FILE__) . '/../../mails/',
                 false,
-                null,
-                null,
-                $html
+                null
             );
 
             if ($result) {

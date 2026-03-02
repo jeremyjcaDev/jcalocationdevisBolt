@@ -114,11 +114,61 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
             $newCounter = $settings['quote_number_counter'] + 1;
             Db::getInstance()->update('jca_quote_settings', ['quote_number_counter' => $newCounter], 'id_quote_settings = ' . (int)$settings['id_quote_settings']);
 
+            // Envoyer l'email de confirmation
+            $emailSent = false;
+            try {
+                require_once _PS_MODULE_DIR_ . 'jca_locationdevis/src/Service/QuoteEmailService.php';
+                $emailService = new Jca\JcaLocationDevis\Service\QuoteEmailService();
+
+                // Récupérer les données complètes du devis pour l'email
+                $quoteData = Db::getInstance()->getRow('
+                    SELECT q.*, qc.name as customer_full_name
+                    FROM ' . _DB_PREFIX_ . 'jca_quotes q
+                    LEFT JOIN ' . _DB_PREFIX_ . 'jca_quote_customers qc ON qc.id_quote = q.id_quote
+                    WHERE q.id_quote = ' . (int)$idQuote
+                );
+
+                // Récupérer les items du devis
+                $itemsData = Db::getInstance()->executeS('
+                    SELECT *
+                    FROM ' . _DB_PREFIX_ . 'jca_quote_items
+                    WHERE id_quote = ' . (int)$idQuote
+                );
+
+                // Préparer les données pour l'email
+                $nameParts = explode(' ', $customer->firstname . ' ' . $customer->lastname);
+                $quoteForEmail = [
+                    'quote_number' => $quoteNumber,
+                    'customer_email' => $customer->email,
+                    'customer_firstname' => $customer->firstname,
+                    'customer_lastname' => $customer->lastname,
+                    'status' => 'pending',
+                    'quote_date' => $now,
+                    'expiry_date' => $validUntil
+                ];
+
+                $itemsForEmail = [];
+                foreach ($itemsData as $item) {
+                    $itemsForEmail[] = [
+                        'product_name' => $item['product_name'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['price']
+                    ];
+                }
+
+                $emailResult = $emailService->sendQuoteCreatedEmail($quoteForEmail, $itemsForEmail);
+                $emailSent = $emailResult['success'] ?? false;
+            } catch (\Exception $e) {
+                // Log l'erreur mais ne bloque pas la création du devis
+                error_log('Erreur envoi email devis: ' . $e->getMessage());
+            }
+
             die(json_encode([
                 'success' => true,
                 'message' => 'Devis créé avec succès',
                 'quote_number' => $quoteNumber,
-                'id_quote' => $idQuote
+                'id_quote' => $idQuote,
+                'email_sent' => $emailSent
             ]));
         } catch (\Exception $e) {
             die(json_encode([
