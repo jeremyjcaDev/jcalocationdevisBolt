@@ -82,6 +82,13 @@ class QuoteEmailService
 
             $modulePath = _PS_MODULE_DIR_ . 'jca_locationdevis/mails/';
 
+            error_log('=== EMAIL DEBUG ===');
+            error_log('Module path: ' . $modulePath);
+            error_log('Language ID: ' . (int)$this->context->language->id);
+            error_log('Language ISO: ' . $this->context->language->iso_code);
+            error_log('Template: custom');
+            error_log('Files check: ' . (file_exists($modulePath . $this->context->language->iso_code . '/custom.html') ? 'EXISTS' : 'NOT FOUND'));
+
             $result = Mail::Send(
                 (int)$this->context->language->id,
                 'custom',
@@ -97,6 +104,8 @@ class QuoteEmailService
                 false,
                 null
             );
+
+            error_log('Mail result: ' . ($result ? 'SUCCESS' : 'FAILED'));
 
             if ($result) {
                 return ['success' => true];
