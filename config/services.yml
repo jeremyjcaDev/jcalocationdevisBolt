@@ -54,6 +54,11 @@ services:
     tags:
       - { name: doctrine.repository_service }
 
+  # SERVICES
+  jca_locationdevis.service.quote_email_service:
+    class: 'Jca\JcaLocationdevis\Service\QuoteEmailService'
+    public: true
+
   # QUERY HANDLERS
   jca_locationdevis.query.handler.get_quote_setting_handler:
     class: 'Jca\JcaLocationdevis\QueryHandler\GetQuoteSettingHandler'
