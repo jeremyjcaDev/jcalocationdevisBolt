@@ -79,6 +79,8 @@ class QuoteEmailService
                 '{content}' => $html
             ];
 
+            $modulePath = _PS_MODULE_DIR_ . 'jca_locationdevis/mails/';
+
             $result = Mail::Send(
                 (int)$this->context->language->id,
                 'custom',
@@ -90,7 +92,7 @@ class QuoteEmailService
                 $fromName,
                 null,
                 null,
-                dirname(__FILE__) . '/../../mails/',
+                $modulePath,
                 false,
                 null
             );
