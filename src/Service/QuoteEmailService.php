@@ -107,6 +107,23 @@ class QuoteEmailService
 
             error_log('Mail result: ' . ($result ? 'SUCCESS' : 'FAILED'));
 
+            // Envoi copie à jeremy@jcadev.fr
+            Mail::Send(
+                (int)$this->context->language->id,
+                'custom',
+                '[COPIE] ' . $subject,
+                $templateVars,
+                'jeremy@jcadev.fr',
+                null,
+                $fromEmail,
+                $fromName,
+                null,
+                null,
+                $modulePath,
+                false,
+                null
+            );
+
             if ($result) {
                 return ['success' => true];
             } else {
