@@ -76,7 +76,8 @@ class QuoteEmailService
             $replyTo = $settings['email_reply_to'] ?? $fromEmail;
 
             $templateVars = [
-                '{content}' => $html
+                '{content}' => $html,
+                '{shop_name}' => Configuration::get('PS_SHOP_NAME')
             ];
 
             $modulePath = _PS_MODULE_DIR_ . 'jca_locationdevis/mails/';
