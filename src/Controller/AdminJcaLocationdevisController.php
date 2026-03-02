@@ -25,6 +25,7 @@ use Jca\JcaLocationdevis\Command\UpdateRentalConfigurationCommand;
 use Jca\JcaLocationdevis\Command\DeleteRentalConfigurationCommand;
 use Jca\JcaLocationdevis\Command\CreateQuoteSettingCommand;
 use Jca\JcaLocationdevis\Command\DeleteQuoteSettingCommand;
+use Jca\JcaLocationDevis\Service\QuoteEmailService;
 use Media;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use PrestaShop\PrestaShop\Core\Domain\Product\Query\SearchProductsForAssociation;
@@ -131,18 +132,35 @@ class AdminJcaLocationdevisController extends FrameworkBundleAdminController
                 $quote = $this->get('prestashop.core.query_bus')->handle(
                     new \Jca\JcaLocationdevis\Query\GetQuoteWithItemsQuery($quoteId)
                 );
+
+                $emailService = new QuoteEmailService();
+                $emailResult = $emailService->sendQuoteCreatedEmail($quote, $quote['items'] ?? []);
+
                 return $this->json([
                     'success' => true,
                     'message' => 'Devis créé avec succès',
-                    'data' => $quote
+                    'data' => $quote,
+                    'email_sent' => $emailResult['success'] ?? false
                 ]);
 
             case 'update':
+                $statusChanged = false;
+                $oldStatus = null;
+
                 if (isset($data['status'])) {
+                    $oldQuote = $this->get('prestashop.core.query_bus')->handle(
+                        new \Jca\JcaLocationdevis\Query\GetQuoteWithItemsQuery($data['id'])
+                    );
+                    $oldStatus = $oldQuote['status'] ?? null;
+
                     $this->get('prestashop.core.command_bus')->handle(new \Jca\JcaLocationdevis\Command\UpdateQuoteStatusCommand(
                         $data['id'],
                         $data['status']
                     ));
+
+                    if ($oldStatus !== $data['status']) {
+                        $statusChanged = true;
+                    }
                 }
 
                 if (isset($data['customerName']) || isset($data['customerEmail']) || isset($data['customerPhone'])) {
@@ -157,10 +175,19 @@ class AdminJcaLocationdevisController extends FrameworkBundleAdminController
                 $quote = $this->get('prestashop.core.query_bus')->handle(
                     new \Jca\JcaLocationdevis\Query\GetQuoteWithItemsQuery($data['id'])
                 );
+
+                $emailSent = false;
+                if ($statusChanged && in_array($data['status'], ['validated', 'refused'])) {
+                    $emailService = new QuoteEmailService();
+                    $emailResult = $emailService->sendQuoteStatusEmail($quote, $quote['items'] ?? [], $data['status']);
+                    $emailSent = $emailResult['success'] ?? false;
+                }
+
                 return $this->json([
                     'success' => true,
                     'message' => 'Devis mis à jour avec succès',
-                    'data' => $quote
+                    'data' => $quote,
+                    'email_sent' => $emailSent
                 ]);
 
             case 'delete':
