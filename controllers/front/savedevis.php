@@ -117,8 +117,10 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
             // Envoyer l'email de confirmation
             $emailSent = false;
             try {
+                error_log('=== SAVEDEVIS: DEBUT ENVOI EMAIL ===');
                 require_once _PS_MODULE_DIR_ . 'jca_locationdevis/src/Service/QuoteEmailService.php';
                 $emailService = new Jca\JcaLocationDevis\Service\QuoteEmailService();
+                error_log('Service email créé');
 
                 // Récupérer les données complètes du devis pour l'email
                 $quoteData = Db::getInstance()->getRow('
@@ -156,7 +158,10 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                     ];
                 }
 
+                error_log('Email destinataire: ' . $quoteForEmail['customer_email']);
+                error_log('Appel sendQuoteCreatedEmail...');
                 $emailResult = $emailService->sendQuoteCreatedEmail($quoteForEmail, $itemsForEmail);
+                error_log('Résultat email: ' . json_encode($emailResult));
                 $emailSent = $emailResult['success'] ?? false;
             } catch (\Exception $e) {
                 // Log l'erreur mais ne bloque pas la création du devis
