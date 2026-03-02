@@ -17,15 +17,20 @@ class QuoteEmailService
 
     public function sendQuoteCreatedEmail($quote, $items = [])
     {
+        error_log('=== sendQuoteCreatedEmail DEBUT ===');
         $settings = $this->getQuoteSettings();
+        error_log('Settings récupérés: ' . json_encode($settings));
 
         if (!$settings || !$settings['email_notifications_enabled'] || !$settings['email_on_quote_created']) {
+            error_log('BLOQUE: notifications désactivées');
             return ['success' => false, 'reason' => 'notifications_disabled'];
         }
 
         if (empty($quote['customer_email'])) {
+            error_log('BLOQUE: pas d\'email client');
             return ['success' => false, 'reason' => 'no_email'];
         }
+        error_log('Email client OK: ' . $quote['customer_email']);
 
         $emailContent = $this->generateQuoteCreatedEmail($quote, $items, $settings);
 
