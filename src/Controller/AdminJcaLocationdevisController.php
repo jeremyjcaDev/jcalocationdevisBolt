@@ -144,51 +144,71 @@ class AdminJcaLocationdevisController extends FrameworkBundleAdminController
                 ]);
 
             case 'update':
-                $statusChanged = false;
-                $oldStatus = null;
+                try {
+                    $statusChanged = false;
+                    $oldStatus = null;
 
-                if (isset($data['status'])) {
-                    $oldQuote = $this->get('prestashop.core.query_bus')->handle(
+                    if (isset($data['status'])) {
+                        $oldQuote = $this->get('prestashop.core.query_bus')->handle(
+                            new \Jca\JcaLocationdevis\Query\GetQuoteWithItemsQuery($data['id'])
+                        );
+                        $oldStatus = $oldQuote['status'] ?? null;
+
+                        $this->get('prestashop.core.command_bus')->handle(new \Jca\JcaLocationdevis\Command\UpdateQuoteStatusCommand(
+                            $data['id'],
+                            $data['status']
+                        ));
+
+                        if ($oldStatus !== $data['status']) {
+                            $statusChanged = true;
+                        }
+                    }
+
+                    if (isset($data['customerName']) || isset($data['customerEmail']) || isset($data['customerPhone'])) {
+                        $this->get('prestashop.core.command_bus')->handle(new UpdateQuoteCommand(
+                            $data['id'],
+                            $data['customerName'] ?? null,
+                            $data['customerEmail'] ?? null,
+                            $data['customerPhone'] ?? null
+                        ));
+                    }
+
+                    $quote = $this->get('prestashop.core.query_bus')->handle(
                         new \Jca\JcaLocationdevis\Query\GetQuoteWithItemsQuery($data['id'])
                     );
-                    $oldStatus = $oldQuote['status'] ?? null;
 
-                    $this->get('prestashop.core.command_bus')->handle(new \Jca\JcaLocationdevis\Command\UpdateQuoteStatusCommand(
-                        $data['id'],
-                        $data['status']
-                    ));
-
-                    if ($oldStatus !== $data['status']) {
-                        $statusChanged = true;
+                    $emailSent = false;
+                    $emailError = null;
+                    if ($statusChanged && in_array($data['status'], ['validated', 'refused'])) {
+                        try {
+                            $emailService = new QuoteEmailService();
+                            $emailResult = $emailService->sendQuoteStatusEmail($quote, $quote['items'] ?? [], $data['status']);
+                            $emailSent = $emailResult['success'] ?? false;
+                            if (!$emailSent && isset($emailResult['error'])) {
+                                $emailError = $emailResult['error'];
+                            }
+                        } catch (\Exception $emailException) {
+                            $emailError = $emailException->getMessage();
+                            error_log('Email error: ' . $emailError);
+                        }
                     }
+
+                    return $this->json([
+                        'success' => true,
+                        'message' => 'Devis mis à jour avec succès',
+                        'data' => $quote,
+                        'email_sent' => $emailSent,
+                        'email_error' => $emailError
+                    ]);
+                } catch (\Exception $e) {
+                    error_log('Update quote error: ' . $e->getMessage());
+                    error_log('Stack trace: ' . $e->getTraceAsString());
+                    return $this->json([
+                        'success' => false,
+                        'message' => 'Erreur lors de la mise à jour: ' . $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ], 500);
                 }
-
-                if (isset($data['customerName']) || isset($data['customerEmail']) || isset($data['customerPhone'])) {
-                    $this->get('prestashop.core.command_bus')->handle(new UpdateQuoteCommand(
-                        $data['id'],
-                        $data['customerName'] ?? null,
-                        $data['customerEmail'] ?? null,
-                        $data['customerPhone'] ?? null
-                    ));
-                }
-
-                $quote = $this->get('prestashop.core.query_bus')->handle(
-                    new \Jca\JcaLocationdevis\Query\GetQuoteWithItemsQuery($data['id'])
-                );
-
-                $emailSent = false;
-                if ($statusChanged && in_array($data['status'], ['validated', 'refused'])) {
-                    $emailService = new QuoteEmailService();
-                    $emailResult = $emailService->sendQuoteStatusEmail($quote, $quote['items'] ?? [], $data['status']);
-                    $emailSent = $emailResult['success'] ?? false;
-                }
-
-                return $this->json([
-                    'success' => true,
-                    'message' => 'Devis mis à jour avec succès',
-                    'data' => $quote,
-                    'email_sent' => $emailSent
-                ]);
 
             case 'delete':
                 $this->get('prestashop.core.command_bus')->handle(new DeleteQuoteCommand($data['id']));
