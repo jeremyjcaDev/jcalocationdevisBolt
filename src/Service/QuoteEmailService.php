@@ -1,4 +1,43 @@
-e, $items, $status)
+<?php
+
+namespace Jca\Locationdevis\Service;
+
+use Configuration;
+use Context;
+use Mail;
+
+class QuoteEmailService
+{
+    private $context;
+
+    public function __construct()
+    {
+        $this->context = Context::getContext();
+    }
+
+    public function sendQuoteCreatedEmail($quote, $items)
+    {
+        $settings = $this->getQuoteSettings();
+
+        if (!$settings || !$settings['email_notifications_enabled'] || !$settings['email_on_quote_created']) {
+            return ['success' => false, 'reason' => 'notifications_disabled'];
+        }
+
+        if (empty($quote['customer_email'])) {
+            return ['success' => false, 'reason' => 'no_email'];
+        }
+
+        $emailContent = $this->generateQuoteCreatedEmail($quote, $items, $settings);
+
+        return $this->sendEmail(
+            $quote['customer_email'],
+            $emailContent['subject'],
+            $emailContent['html'],
+            $settings
+        );
+    }
+
+    public function sendQuoteStatusEmail($quote, $items, $status)
     {
         $settings = $this->getQuoteSettings();
 
