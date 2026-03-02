@@ -1,6 +1,6 @@
 <?php
 
-namespace Jca\Locationdevis\Service;
+namespace Jca\JcaLocationdevis\Service;
 
 use Configuration;
 use Context;
