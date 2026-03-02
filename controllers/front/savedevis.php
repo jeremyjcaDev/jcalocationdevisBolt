@@ -114,30 +114,11 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
             $newCounter = $settings['quote_number_counter'] + 1;
             Db::getInstance()->update('jca_quote_settings', ['quote_number_counter' => $newCounter], 'id_quote_settings = ' . (int)$settings['id_quote_settings']);
 
-            // Envoyer l'email de confirmation
-            require_once _PS_MODULE_DIR_ . 'jca_locationdevis/src/Service/QuoteEmailService.php';
-            $emailService = new Jca\JcaLocationDevis\Service\QuoteEmailService();
-
-            // Préparer les données du devis pour l'email
-            $quote = [
-                'id_quote' => $idQuote,
-                'quote_number' => $quoteNumber,
-                'customer_name' => strtoupper($customer->lastname) . ' ' . $customer->firstname,
-                'customer_email' => $customer->email,
-                'status' => 'pending',
-                'valid_until' => $validUntil,
-                'date_add' => $now
-            ];
-
-            $emailResult = $emailService->sendQuoteCreatedEmail($quote, $products);
-            $emailSent = $emailResult['success'] ?? false;
-
             die(json_encode([
                 'success' => true,
                 'message' => 'Devis créé avec succès',
                 'quote_number' => $quoteNumber,
-                'id_quote' => $idQuote,
-                'email_sent' => $emailSent
+                'id_quote' => $idQuote
             ]));
         } catch (\Exception $e) {
             die(json_encode([
