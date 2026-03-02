@@ -106,7 +106,7 @@ class QuoteEmailService
     private function getQuoteSettings()
     {
         $db = \Db::getInstance();
-        $sql = 'SELECT * FROM `' . _DB_PREFIX_ . 'quote_settings` LIMIT 1';
+        $sql = 'SELECT * FROM `' . _DB_PREFIX_ . 'jca_quote_settings` LIMIT 1';
         $result = $db->getRow($sql);
 
         if (!$result) {
