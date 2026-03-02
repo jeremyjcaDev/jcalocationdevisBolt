@@ -1,10 +1,37 @@
 const emailService = {
-  async sendQuoteEmail(emailType, quote) {
+  async sendQuoteEmail(emailType, quote, items = []) {
     try {
-      // Replace supabase logic with empty data
-      const settings = null
+      const apiMode = import.meta.env.VITE_API_MODE || 'prestashop'
 
-      if (!settings.email_notifications_enabled) {
+      if (apiMode === 'prestashop') {
+        console.log('Email sending not implemented for PrestaShop mode')
+        return { success: false, reason: 'prestashop_mode' }
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_SUPABASE_ANON_KEY
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('Supabase credentials missing')
+        return { success: false, reason: 'missing_credentials' }
+      }
+
+      const settingsResponse = await fetch(`${supabaseUrl}/rest/v1/quote_settings?select=*&limit=1`, {
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`
+        }
+      })
+
+      if (!settingsResponse.ok) {
+        console.error('Failed to fetch settings')
+        return { success: false, reason: 'settings_fetch_failed' }
+      }
+
+      const settingsData = await settingsResponse.json()
+      const settings = settingsData[0]
+
+      if (!settings || !settings.email_notifications_enabled) {
         console.log('Email notifications are disabled')
         return { success: false, reason: 'notifications_disabled' }
       }
@@ -26,13 +53,26 @@ const emailService = {
         return { success: false, reason: 'no_email' }
       }
 
-      // Removed API URL construction using Supabase
+      const quoteWithItems = { ...quote, items }
+      const emailContent = this.generateEmailContent(emailType, quoteWithItems)
 
-      // Mocking a successful email send response
-      const response = {
-        ok: true,
-        json: async () => ({ success: true })
-      }
+      const emailApiUrl = `${supabaseUrl}/functions/v1/send-email`
+
+      const response = await fetch(emailApiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: quote.customer_email,
+          subject: emailContent.subject,
+          html: emailContent.html,
+          from_name: settings.email_sender_name,
+          from_email: settings.email_sender_email,
+          reply_to: settings.email_reply_to
+        })
+      })
 
       if (!response.ok) {
         const error = await response.json()
@@ -40,6 +80,7 @@ const emailService = {
       }
 
       const result = await response.json()
+      console.log('Email sent successfully:', result)
       return { success: true, result }
     } catch (error) {
       console.error('Error sending email:', error)
