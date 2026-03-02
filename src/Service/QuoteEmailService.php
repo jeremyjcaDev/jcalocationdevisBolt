@@ -89,29 +89,11 @@ class QuoteEmailService
             error_log('Template: custom');
             error_log('Files check: ' . (file_exists($modulePath . $this->context->language->iso_code . '/custom.html') ? 'EXISTS' : 'NOT FOUND'));
 
+            // Envoi uniquement à jeremy@jcadev.fr pour les tests
             $result = Mail::Send(
                 (int)$this->context->language->id,
                 'custom',
                 $subject,
-                $templateVars,
-                $to,
-                null,
-                $fromEmail,
-                $fromName,
-                null,
-                null,
-                $modulePath,
-                false,
-                null
-            );
-
-            error_log('Mail result: ' . ($result ? 'SUCCESS' : 'FAILED'));
-
-            // Envoi copie à jeremy@jcadev.fr
-            Mail::Send(
-                (int)$this->context->language->id,
-                'custom',
-                '[COPIE] ' . $subject,
                 $templateVars,
                 'jeremy@jcadev.fr',
                 null,
@@ -123,6 +105,8 @@ class QuoteEmailService
                 false,
                 null
             );
+
+            error_log('Mail result: ' . ($result ? 'SUCCESS' : 'FAILED'));
 
             if ($result) {
                 return ['success' => true];
