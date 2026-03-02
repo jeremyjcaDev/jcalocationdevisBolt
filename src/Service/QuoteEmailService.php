@@ -94,6 +94,34 @@ class QuoteEmailService
             error_log('Template: custom');
             error_log('Files check: ' . (file_exists($modulePath . $this->context->language->iso_code . '/custom.html') ? 'EXISTS' : 'NOT FOUND'));
 
+            if (defined('_PS_MODE_DEV_') && _PS_MODE_DEV_) {
+                $logPath = _PS_ROOT_DIR_ . '/var/logs/emails_dev.log';
+                $logDir = dirname($logPath);
+
+                if (!is_dir($logDir)) {
+                    mkdir($logDir, 0755, true);
+                }
+
+                $logContent = str_repeat('=', 80) . "\n";
+                $logContent .= "EMAIL LOG - " . date('Y-m-d H:i:s') . "\n";
+                $logContent .= str_repeat('=', 80) . "\n";
+                $logContent .= "To: {$to}\n";
+                $logContent .= "From: {$fromName} <{$fromEmail}>\n";
+                $logContent .= "Reply-To: {$replyTo}\n";
+                $logContent .= "Subject: {$subject}\n";
+                $logContent .= str_repeat('-', 80) . "\n";
+                $logContent .= "HTML Content:\n";
+                $logContent .= str_repeat('-', 80) . "\n";
+                $logContent .= $html . "\n";
+                $logContent .= str_repeat('=', 80) . "\n\n";
+
+                file_put_contents($logPath, $logContent, FILE_APPEND);
+
+                error_log('MODE DEV: Email non envoyé mais loggé dans ' . $logPath);
+
+                return ['success' => true, 'dev_mode' => true, 'log_path' => $logPath];
+            }
+
             $result = Mail::Send(
                 (int)$this->context->language->id,
                 'custom',
