@@ -25,7 +25,7 @@ use Jca\JcaLocationdevis\Command\UpdateRentalConfigurationCommand;
 use Jca\JcaLocationdevis\Command\DeleteRentalConfigurationCommand;
 use Jca\JcaLocationdevis\Command\CreateQuoteSettingCommand;
 use Jca\JcaLocationdevis\Command\DeleteQuoteSettingCommand;
-use Jca\JcaLocationDevis\Service\QuoteEmailService;
+use Jca\JcaLocationdevis\Service\QuoteEmailService;
 use Media;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use PrestaShop\PrestaShop\Core\Domain\Product\Query\SearchProductsForAssociation;
