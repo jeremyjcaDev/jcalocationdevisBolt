@@ -24,14 +24,14 @@ header('Content-Type: text/html; charset=utf-8');
 <?php
 // Récupérer le dernier devis
 $db = Db::getInstance();
-$quote = $db->getRow('SELECT * FROM `' . _DB_PREFIX_ . 'jca_quote` ORDER BY id_quote DESC LIMIT 1');
+$quote = $db->getRow('SELECT * FROM `' . _DB_PREFIX_ . 'jca_quotes` ORDER BY id_quote DESC LIMIT 1');
 
 if (!$quote) {
     echo '<p class="error">Aucun devis trouvé dans la base de données.</p>';
     exit;
 }
 
-$items = $db->executeS('SELECT * FROM `' . _DB_PREFIX_ . 'jca_quote_item` WHERE id_quote = ' . (int)$quote['id_quote']);
+$items = $db->executeS('SELECT * FROM `' . _DB_PREFIX_ . 'jca_quote_items` WHERE id_quote = ' . (int)$quote['id_quote']);
 
 echo "<div class='info'>";
 echo "<h2>Devis trouvé</h2>";
