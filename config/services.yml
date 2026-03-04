@@ -117,6 +117,7 @@ services:
 
   jca_locationdevis.command.handler.update_quote_status:
     class: 'Jca\JcaLocationdevis\CommandHandler\UpdateQuoteStatusHandler'
+    autowire: false
     arguments:
       - '@doctrine.orm.entity_manager'
       - '@jca_locationdevis.repository.quote_repository'
