@@ -120,6 +120,7 @@ services:
     arguments:
       - '@doctrine.orm.entity_manager'
       - '@jca_locationdevis.repository.quote_repository'
+      - '@jca_locationdevis.service.quote_email_service'
     tags:
       - { name: tactician.handler, command: Jca\JcaLocationdevis\Command\UpdateQuoteStatusCommand }
 
