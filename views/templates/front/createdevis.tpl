@@ -322,13 +322,28 @@
                         btn.disabled = true;
                         btn.textContent = 'Création du devis...';
 
+                        // Récupérer l'option de livraison sélectionnée
+                        const deliverySelect = document.querySelector('select[name="delivery_option"]');
+                        let deliveryData = null;
+
+                        if (deliverySelect && deliverySelect.value) {
+                            const selectedOption = deliverySelect.options[deliverySelect.selectedIndex];
+                            deliveryData = {
+                                id_carrier: parseInt(deliverySelect.value),
+                                carrier_name: selectedOption.textContent.split(' - ')[0].trim(),
+                                price_without_tax: parseFloat(selectedOption.textContent.match(/Prix HT: ([0-9,]+) €/)[1].replace(',', '.')),
+                                price_with_tax: parseFloat(selectedOption.dataset.priceWithTax.replace(',', '.'))
+                            };
+                        }
+
                         fetch(prestashop.urls.base_url + 'module/jca_locationdevis/savedevis', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
                                 },
                                 body: JSON.stringify({
-                                    quote_type: 'standard' // Ajout du type de devis
+                                    quote_type: 'standard',
+                                    delivery: deliveryData
                                 })
                             })
                             .then(response => response.json())

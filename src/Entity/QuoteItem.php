@@ -24,6 +24,11 @@ class QuoteItem
     private $idQuote;
 
     /**
+     * @ORM\Column(name="item_type", type="string", length=10)
+     */
+    private $itemType = 'product';
+
+    /**
      * @ORM\Column(name="id_product", type="integer")
      */
     private $idProduct;
@@ -96,6 +101,17 @@ class QuoteItem
     public function setIdQuote(int $idQuote): self
     {
         $this->idQuote = $idQuote;
+        return $this;
+    }
+
+    public function getItemType(): string
+    {
+        return $this->itemType;
+    }
+
+    public function setItemType(string $itemType): self
+    {
+        $this->itemType = $itemType;
         return $this;
     }
 

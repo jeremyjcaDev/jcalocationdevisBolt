@@ -97,32 +97,48 @@ class Jca_locationdevisDownloadquoteModuleFrontController extends ModuleFrontCon
             ];
         }
 
-        /* ================= PRODUITS ================= */
+        /* ================= PRODUITS ET LIVRAISON ================= */
         $rows = Db::getInstance()->executeS(
             'SELECT * FROM `' . _DB_PREFIX_ . 'jca_quote_items` WHERE id_quote = ' . $idQuote
         );
         // Adresse temporaire pour le calcul de TVA (OBLIGATOIRE pour PrestaShop)
         $taxAddress = new Address();
-        $taxAddress->id_country = (int) $context->country->id; // Pays de la boutique
+        $taxAddress->id_country = (int) $context->country->id;
         $taxAddress->id_state = 0;
         $taxAddress->postcode = '';
         $taxAddress->vat_number = '';
 
         $items = [];
+        $deliveryItem = null;
         $totalHt = 0;
         $totalTax = 0;
 
         foreach ($rows as $row) {
-            $product = new Product((int)$row['id_product'], false, $context->language->id);
-
             $quantity = (int) $row['quantity'];
             $priceHt  = (float) $row['price'];
             $lineHt   = $priceHt * $quantity;
 
+            // Vérifier si c'est un item de livraison
+            $isDelivery = isset($row['item_type']) && $row['item_type'] === 'delivery';
+
+            if ($isDelivery) {
+                // Traiter la livraison séparément
+                $deliveryItem = [
+                    'name'            => $row['product_name'],
+                    'price'           => Tools::displayPrice($priceHt, $context->currency),
+                    'price_raw'       => $priceHt,
+                ];
+                $totalHt  += $lineHt;
+                continue;
+            }
+
+            // Traiter les produits normaux
+            $product = new Product((int)$row['id_product'], false, $context->language->id);
+
             /* ===== ÉCOTAXE ===== */
             $ecotax = (float) $product->ecotax;
 
-            /* ===== TVA (CORRIGÉ) ===== */
+            /* ===== TVA ===== */
             $taxManager = TaxManagerFactory::getManager(
                 $taxAddress,
                 (int) $product->id_tax_rules_group
@@ -189,6 +205,7 @@ class Jca_locationdevisDownloadquoteModuleFrontController extends ModuleFrontCon
         $smarty->assign([
             'quote'        => $quote,
             'products'     => $items,
+            'delivery_item' => $deliveryItem,
             'totals'       => $totals,
             'invoice'      => $invoice,
             'delivery'     => $delivery,

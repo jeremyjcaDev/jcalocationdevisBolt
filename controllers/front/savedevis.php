@@ -82,12 +82,13 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
 
                 $data = [
                     'id_quote'             => $idQuote,
+                    'item_type'            => 'product',
                     'id_product'           => (int)$p['id_product'],
                     'product_reference'    => pSQL($p['reference']),
                     'product_name'         => pSQL($p['name']),
                     'quantity'             => (int)$p['cart_quantity'],
                     'price'                => (float)$p['price'],
-                    'is_rental'            => ($quoteType !== 'standard') ? 1 : 0, // Marquer comme location si non standard
+                    'is_rental'            => ($quoteType !== 'standard') ? 1 : 0,
                     'date_add'             => $now,
                 ];
 
@@ -97,6 +98,23 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 }
 
                 Db::getInstance()->insert('jca_quote_items', $data);
+            }
+
+            // Ajouter la livraison si sélectionnée
+            if (isset($input['delivery']) && !empty($input['delivery'])) {
+                $delivery = $input['delivery'];
+                $deliveryData = [
+                    'id_quote'             => $idQuote,
+                    'item_type'            => 'delivery',
+                    'id_product'           => (int)$delivery['id_carrier'],
+                    'product_reference'    => 'CARRIER-' . (int)$delivery['id_carrier'],
+                    'product_name'         => pSQL($delivery['carrier_name']),
+                    'quantity'             => 1,
+                    'price'                => (float)$delivery['price_without_tax'],
+                    'is_rental'            => 0,
+                    'date_add'             => $now,
+                ];
+                Db::getInstance()->insert('jca_quote_items', $deliveryData);
             }
 
             // Client

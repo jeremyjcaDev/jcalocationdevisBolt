@@ -166,6 +166,26 @@
 </table>
 <div style="height:45px;"></div> <!-- espace après le logo -->
 
+{if $delivery_item}
+<h2>Livraison</h2>
+<table class="products" width="100%" cellpadding="5" cellspacing="0"
+    style="border-collapse: collapse; font-family: DejaVu Sans, sans-serif; font-size: 9pt; margin-top: 10px;">
+    <thead>
+        <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ccc;">
+            <th class="product_header left" style="text-align: left; font-weight: bold; border: 1px solid #ddd;">Mode de livraison</th>
+            <th class="product_header right" style="text-align: right; font-weight: bold; border: 1px solid #ddd;">Prix HT</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr style="background-color: #ffffff; border: 1px solid #ddd;">
+            <td class="left" style="border: 1px solid #ddd; padding: 5px;">{$delivery_item.name}</td>
+            <td class="right" style="text-align: right; border: 1px solid #ddd; padding: 5px;">{$delivery_item.price}</td>
+        </tr>
+    </tbody>
+</table>
+<div style="height:45px;"></div> <!-- espace après le logo -->
+{/if}
+
 <h2>Total</h2>
 
 {if $location.is_rental}
@@ -207,6 +227,14 @@
                     Sous-total :</td>
                 <td class="value" style="text-align: right; border: 1px solid #ddd;">{$totals.subtotal}</td>
             </tr>
+            {if $delivery_item}
+            <tr>
+                <td class="label"
+                    style="text-align: right; font-weight: bold; background-color: #f5f5f5; border: 1px solid #ddd;">
+                    Livraison :</td>
+                <td class="value" style="text-align: right; border: 1px solid #ddd;">{$delivery_item.price}</td>
+            </tr>
+            {/if}
             <tr>
                 <td class="label"
                     style="text-align: right; font-weight: bold; background-color: #f5f5f5; border: 1px solid #ddd;">
