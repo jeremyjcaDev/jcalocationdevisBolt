@@ -117,16 +117,31 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 Db::getInstance()->insert('jca_quote_items', $deliveryData);
             }
 
-            // Client
-            Db::getInstance()->insert('jca_quote_customers', [
-                'id_quote'                => $idQuote,
-                'id_customer_prestashop'  => (int)$customer->id,
-                'email'                   => pSQL($customer->email),
-                'name'                    => pSQL($customer->firstname . ' ' . strtoupper($customer->lastname)),
-                'phone'                   => pSQL($customer->phone ?? ''),
-                'date_add'                => $now,
-                'date_upd'                => $now,
-            ]);
+            // Client - Vérifier si le client existe déjà
+            $existingCustomer = Db::getInstance()->getRow(
+                'SELECT id_customer FROM ' . _DB_PREFIX_ . 'jca_quote_customers WHERE email = "' . pSQL($customer->email) . '"'
+            );
+
+            if ($existingCustomer) {
+                // Mettre à jour le client existant
+                Db::getInstance()->update('jca_quote_customers', [
+                    'id_customer_prestashop'  => (int)$customer->id,
+                    'name'                    => pSQL($customer->firstname . ' ' . strtoupper($customer->lastname)),
+                    'phone'                   => pSQL($customer->phone ?? ''),
+                    'date_upd'                => $now,
+                ], 'email = "' . pSQL($customer->email) . '"');
+            } else {
+                // Insérer un nouveau client
+                Db::getInstance()->insert('jca_quote_customers', [
+                    'id_quote'                => $idQuote,
+                    'id_customer_prestashop'  => (int)$customer->id,
+                    'email'                   => pSQL($customer->email),
+                    'name'                    => pSQL($customer->firstname . ' ' . strtoupper($customer->lastname)),
+                    'phone'                   => pSQL($customer->phone ?? ''),
+                    'date_add'                => $now,
+                    'date_upd'                => $now,
+                ]);
+            }
 
             // Mettre à jour le compteur dans settings
             $newCounter = $settings['quote_number_counter'] + 1;
