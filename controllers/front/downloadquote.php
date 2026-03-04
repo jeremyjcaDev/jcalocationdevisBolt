@@ -1,8 +1,5 @@
 <?php
 
-use Address;
-use TaxManagerFactory;
-
 class Jca_locationdevisDownloadquoteModuleFrontController extends ModuleFrontController
 {
     public function initContent()
@@ -36,33 +33,58 @@ class Jca_locationdevisDownloadquoteModuleFrontController extends ModuleFrontCon
         if ($customerRow && !empty($customerRow['id_customer_prestashop'])) {
             $customerObj = new Customer((int)$customerRow['id_customer_prestashop']);
 
-            // Adresse de facturation
-            $invoiceAddress = new Address((int)$customerObj->id_address_invoice);
-            $invoice = [
-                'name'     => trim($customerObj->firstname . ' ' . $customerObj->lastname),
-                'company'  => $invoiceAddress->company,
-                'address1' => $invoiceAddress->address1,
-                'postcode' => $invoiceAddress->postcode,
-                'city'     => $invoiceAddress->city,
-                'country'  => $invoiceAddress->country, // tu peux utiliser Country::getNameById si besoin
-                'phone'    => $invoiceAddress->phone ?: $customerObj->phone,
-                'email'    => $customerObj->email,
-            ];
+            // Récupérer les adresses depuis la base
+            $addresses = $customerObj->getAddresses((int)$context->language->id);
 
-            // Adresse de livraison
-            $deliveryAddress = new Address((int)$customerObj->id_address_delivery);
-            $delivery = [
-                'name'     => trim($customerObj->firstname . ' ' . $customerObj->lastname),
-                'company'  => $deliveryAddress->company,
-                'address1' => $deliveryAddress->address1,
-                'postcode' => $deliveryAddress->postcode,
-                'city'     => $deliveryAddress->city,
-                'country'  => $deliveryAddress->country,
-                'phone'    => $deliveryAddress->phone ?: $customerObj->phone,
-                'email'    => $customerObj->email,
-            ];
+            // Trouver l'adresse par défaut ou la première disponible
+            $defaultAddress = null;
+            if (!empty($addresses)) {
+                foreach ($addresses as $addr) {
+                    if (!$defaultAddress) {
+                        $defaultAddress = $addr;
+                    }
+                }
+            }
+
+            if ($defaultAddress) {
+                $invoiceAddress = new Address((int)$defaultAddress['id_address']);
+                $invoice = [
+                    'name'     => trim($customerObj->firstname . ' ' . $customerObj->lastname),
+                    'company'  => $invoiceAddress->company,
+                    'address1' => $invoiceAddress->address1,
+                    'postcode' => $invoiceAddress->postcode,
+                    'city'     => $invoiceAddress->city,
+                    'country'  => Country::getNameById($context->language->id, $invoiceAddress->id_country),
+                    'phone'    => $invoiceAddress->phone,
+                    'email'    => $customerObj->email,
+                ];
+
+                $deliveryAddress = $invoiceAddress;
+                $delivery = [
+                    'name'     => trim($customerObj->firstname . ' ' . $customerObj->lastname),
+                    'company'  => $deliveryAddress->company,
+                    'address1' => $deliveryAddress->address1,
+                    'postcode' => $deliveryAddress->postcode,
+                    'city'     => $deliveryAddress->city,
+                    'country'  => Country::getNameById($context->language->id, $deliveryAddress->id_country),
+                    'phone'    => $deliveryAddress->phone,
+                    'email'    => $customerObj->email,
+                ];
+            } else {
+                // Pas d'adresse trouvée
+                $invoice = $delivery = [
+                    'name'     => trim($customerObj->firstname . ' ' . $customerObj->lastname),
+                    'company'  => '',
+                    'address1' => '',
+                    'postcode' => '',
+                    'city'     => '',
+                    'country'  => '',
+                    'phone'    => '',
+                    'email'    => $customerObj->email,
+                ];
+            }
         } else {
-            // fallback si le client PrestaShop n’existe pas
+            // fallback si le client PrestaShop n'existe pas
             $invoice = $delivery = [
                 'name'     => $customerRow['firstname'] ?? '',
                 'company'  => $customerRow['company'] ?? '',
