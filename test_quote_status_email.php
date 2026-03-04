@@ -24,12 +24,7 @@ header('Content-Type: text/html; charset=utf-8');
 <?php
 // Récupérer le dernier devis
 $db = Db::getInstance();
-$quote = $db->getRow('
-    SELECT q.*, qc.customer_firstname, qc.customer_lastname, qc.customer_email, qc.customer_phone
-    FROM `' . _DB_PREFIX_ . 'jca_quotes` q
-    LEFT JOIN `' . _DB_PREFIX_ . 'jca_quote_customer` qc ON q.id_quote = qc.id_quote
-    ORDER BY q.id_quote DESC LIMIT 1
-');
+$quote = $db->getRow('SELECT * FROM `' . _DB_PREFIX_ . 'jca_quotes` ORDER BY id_quote DESC LIMIT 1');
 
 if (!$quote) {
     echo '<p class="error">Aucun devis trouvé dans la base de données.</p>';
@@ -42,7 +37,7 @@ echo "<div class='info'>";
 echo "<h2>Devis trouvé</h2>";
 echo "<strong>ID:</strong> " . $quote['id_quote'] . "<br>";
 echo "<strong>Numéro:</strong> " . $quote['quote_number'] . "<br>";
-echo "<strong>Client:</strong> " . $quote['customer_firstname'] . ' ' . $quote['customer_lastname'] . "<br>";
+echo "<strong>Client:</strong> " . $quote['customer_name'] . "<br>";
 echo "<strong>Email:</strong> " . $quote['customer_email'] . "<br>";
 echo "<strong>Statut actuel:</strong> " . $quote['status'] . "<br>";
 echo "<strong>Nombre d'articles:</strong> " . count($items) . "<br>";

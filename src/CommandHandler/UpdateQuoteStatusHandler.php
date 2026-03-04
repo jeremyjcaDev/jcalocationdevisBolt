@@ -42,12 +42,7 @@ class UpdateQuoteStatusHandler
 
         if (in_array($newStatus, ['validated', 'refused']) && $oldStatus !== $newStatus) {
             $db = \Db::getInstance();
-            $quoteData = $db->getRow('
-                SELECT q.*, qc.customer_firstname, qc.customer_lastname, qc.customer_email, qc.customer_phone
-                FROM `' . _DB_PREFIX_ . 'jca_quotes` q
-                LEFT JOIN `' . _DB_PREFIX_ . 'jca_quote_customer` qc ON q.id_quote = qc.id_quote
-                WHERE q.id_quote = ' . (int)$command->getQuoteId()
-            );
+            $quoteData = $db->getRow('SELECT * FROM `' . _DB_PREFIX_ . 'jca_quotes` WHERE id_quote = ' . (int)$command->getQuoteId());
             $items = $db->executeS('SELECT * FROM `' . _DB_PREFIX_ . 'jca_quote_items` WHERE id_quote = ' . (int)$command->getQuoteId());
 
             $this->emailService->sendQuoteStatusEmail($quoteData, $items, $newStatus);

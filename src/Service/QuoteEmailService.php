@@ -188,12 +188,12 @@ class QuoteEmailService
         $itemsHtml = '';
         $total = 0;
         foreach ($items as $item) {
-            $subtotal = $item['quantity'] * $item['unit_price'];
+            $subtotal = $item['quantity'] * $item['price'];
             $total += $subtotal;
             $itemsHtml .= '<tr>
                 <td style="padding: 10px; border-bottom: 1px solid #eee;">' . htmlspecialchars($item['product_name']) . '</td>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">' . $item['quantity'] . '</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">' . number_format($item['unit_price'], 2, ',', ' ') . ' €</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">' . number_format($item['price'], 2, ',', ' ') . ' €</td>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">' . number_format($subtotal, 2, ',', ' ') . ' €</td>
             </tr>';
         }
@@ -206,13 +206,13 @@ class QuoteEmailService
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
                 <h2 style="color: #2c3e50;">Nouveau devis créé</h2>
-                <p>Bonjour ' . htmlspecialchars($quote['customer_firstname']) . ' ' . htmlspecialchars($quote['customer_lastname']) . ',</p>
+                <p>Bonjour ' . htmlspecialchars($quote['customer_name'] ?? 'Client') . ',</p>
                 <p>Votre devis <strong>#' . htmlspecialchars($quote['quote_number']) . '</strong> a bien été créé.</p>
 
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
                     <h3 style="margin-top: 0;">Détails du devis</h3>
-                    <p><strong>Date:</strong> ' . date('d/m/Y', strtotime($quote['quote_date'])) . '</p>
-                    <p><strong>Validité:</strong> jusqu\'au ' . date('d/m/Y', strtotime($quote['expiry_date'])) . '</p>
+                    <p><strong>Date:</strong> ' . date('d/m/Y', strtotime($quote['date_add'])) . '</p>
+                    <p><strong>Validité:</strong> jusqu\'au ' . date('d/m/Y', strtotime($quote['valid_until'])) . '</p>
                     <p><strong>Statut:</strong> ' . ucfirst($quote['status']) . '</p>
                 </div>
 
@@ -266,14 +266,14 @@ class QuoteEmailService
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
                 <h2 style="color: #2c3e50;">Mise à jour de votre devis</h2>
-                <p>Bonjour ' . htmlspecialchars($quote['customer_firstname']) . ' ' . htmlspecialchars($quote['customer_lastname']) . ',</p>
+                <p>Bonjour ' . htmlspecialchars($quote['customer_name'] ?? 'Client') . ',</p>
 
                 ' . $statusMessage . '
 
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
                     <h3 style="margin-top: 0;">Référence du devis</h3>
                     <p><strong>Numéro:</strong> #' . htmlspecialchars($quote['quote_number']) . '</p>
-                    <p><strong>Date:</strong> ' . date('d/m/Y', strtotime($quote['quote_date'])) . '</p>
+                    <p><strong>Date:</strong> ' . date('d/m/Y', strtotime($quote['date_add'])) . '</p>
                 </div>
 
                 <p>Pour toute question, n\'hésitez pas à nous contacter.</p>
