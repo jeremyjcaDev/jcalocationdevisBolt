@@ -82,20 +82,46 @@ class QuoteEmailService
 
             $modulePath = _PS_MODULE_DIR_ . 'jca_locationdevis/mails/';
 
-            error_log('=== EMAIL DEBUG ===');
+            error_log('=== EMAIL DEVIS DEBUG ===');
+            error_log('Destinataire: ' . $to);
+            error_log('Sujet: ' . $subject);
+            error_log('From: ' . $fromEmail . ' (' . $fromName . ')');
             error_log('Module path: ' . $modulePath);
             error_log('Language ID: ' . (int)$this->context->language->id);
             error_log('Language ISO: ' . $this->context->language->iso_code);
             error_log('Template: custom');
-            error_log('Files check: ' . (file_exists($modulePath . $this->context->language->iso_code . '/custom.html') ? 'EXISTS' : 'NOT FOUND'));
 
-            // Envoi uniquement à jeremy@jcadev.fr pour les tests
+            $templatePath = $modulePath . $this->context->language->iso_code . '/custom.html';
+            $templateExists = file_exists($templatePath);
+            error_log('Template path: ' . $templatePath);
+            error_log('Template exists: ' . ($templateExists ? 'YES' : 'NO'));
+
+            if (!$templateExists) {
+                error_log('ERROR: Template file not found!');
+                return ['success' => false, 'error' => 'Template file not found: ' . $templatePath];
+            }
+
+            if (empty($fromEmail)) {
+                error_log('ERROR: PS_SHOP_EMAIL not configured');
+                return ['success' => false, 'error' => 'PS_SHOP_EMAIL not configured'];
+            }
+
+            $mailMethod = Configuration::get('PS_MAIL_METHOD');
+            error_log('Mail method: ' . $mailMethod . ' (1=PHP mail, 2=SMTP)');
+
+            if ($mailMethod == 2) {
+                error_log('SMTP Server: ' . Configuration::get('PS_MAIL_SERVER'));
+                error_log('SMTP User: ' . Configuration::get('PS_MAIL_USER'));
+                error_log('SMTP Port: ' . Configuration::get('PS_MAIL_SMTP_PORT'));
+                error_log('SMTP Encryption: ' . Configuration::get('PS_MAIL_SMTP_ENCRYPTION'));
+            }
+
             $result = Mail::Send(
                 (int)$this->context->language->id,
                 'custom',
                 $subject,
                 $templateVars,
-                'jeremy@jcadev.fr',
+                $to,
                 null,
                 $fromEmail,
                 $fromName,
@@ -106,15 +132,31 @@ class QuoteEmailService
                 null
             );
 
-            error_log('Mail result: ' . ($result ? 'SUCCESS' : 'FAILED'));
+            error_log('Mail::Send result: ' . ($result ? 'SUCCESS' : 'FAILED'));
 
             if ($result) {
+                error_log('✓ Email sent successfully to: ' . $to);
                 return ['success' => true];
             } else {
-                return ['success' => false, 'error' => 'Mail::Send returned false'];
+                error_log('✗ Mail::Send returned false');
+                $errorMsg = 'Mail::Send returned false. ';
+
+                if ($mailMethod == 1) {
+                    $errorMsg .= 'PHP mail() method is used. Check that sendmail is configured on the server.';
+                } else if ($mailMethod == 2) {
+                    $errorMsg .= 'SMTP method is used. Check SMTP credentials in PrestaShop back-office (Advanced Parameters > Email).';
+                } else {
+                    $errorMsg .= 'No mail method configured. Configure email in PrestaShop back-office.';
+                }
+
+                error_log($errorMsg);
+                return ['success' => false, 'error' => $errorMsg];
             }
         } catch (\Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
+            $errorMsg = 'Exception: ' . $e->getMessage();
+            error_log('✗ ' . $errorMsg);
+            error_log('Stack trace: ' . $e->getTraceAsString());
+            return ['success' => false, 'error' => $errorMsg];
         }
     }
 
