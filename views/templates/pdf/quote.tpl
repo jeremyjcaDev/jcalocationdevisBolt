@@ -145,10 +145,14 @@
             </th>
             <th class="product_header center" style="text-align: center; font-weight: bold; border: 1px solid #ddd;">
                 Quantité</th>
+            {if $location.is_rental}
+            <th class="product_header right" style="text-align: right; font-weight: bold; border: 1px solid #ddd;">Mensualité</th>
+            {else}
             <th class="product_header right" style="text-align: right; font-weight: bold; border: 1px solid #ddd;">Prix
                 unitaire</th>
             <th class="product_header right" style="text-align: right; font-weight: bold; border: 1px solid #ddd;">Total
             </th>
+            {/if}
         </tr>
     </thead>
     <tbody>
@@ -158,8 +162,12 @@
                 <td class="left" style="border: 1px solid #ddd; padding: 5px;">{$product.name}</td>
                 <td class="center" style="text-align: center; border: 1px solid #ddd; padding: 5px;">{$product.quantity}
                 </td>
+                {if $location.is_rental}
+                <td class="right" style="text-align: right; border: 1px solid #ddd; padding: 5px;">{$product.price} / mois</td>
+                {else}
                 <td class="right" style="text-align: right; border: 1px solid #ddd; padding: 5px;">{$product.price}</td>
                 <td class="right" style="text-align: right; border: 1px solid #ddd; padding: 5px;">{$product.total}</td>
+                {/if}
             </tr>
         {/foreach}
     </tbody>

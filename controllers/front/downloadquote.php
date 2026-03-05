@@ -150,9 +150,12 @@ class Jca_locationdevisDownloadquoteModuleFrontController extends ModuleFrontCon
             $lineTax = $lineHt * ($taxRate / 100);
 
             /* ===== LOCATION ===== */
+            $isRental = (int)$row['is_rental'] === 1;
             $monthlyPayment = null;
-            if ((int)$row['is_rental'] === 1 && $row['rate_percentage'] && $row['duration_months']) {
-                $monthlyPayment = ($priceHt * ($row['rate_percentage'] / 100)) / $row['duration_months'];
+
+            if ($isRental && $row['rate_percentage'] && $row['duration_months']) {
+                // Pour les locations, le prix est déjà la mensualité
+                $monthlyPayment = $priceHt;
             }
 
             $items[] = [
@@ -163,14 +166,17 @@ class Jca_locationdevisDownloadquoteModuleFrontController extends ModuleFrontCon
                 'total'           => Tools::displayPrice($lineHt, $context->currency),
                 'tax_rate'        => $taxRate,
                 'ecotax'          => $ecotax,
-                'is_rental'       => (int)$row['is_rental'],
+                'is_rental'       => $isRental,
                 'duration_months' => $row['duration_months'],
                 'rate_percentage' => $row['rate_percentage'],
                 'monthly_payment' => $monthlyPayment,
             ];
 
-            $totalHt  += $lineHt;
-            $totalTax += $lineTax;
+            // Pour les locations, ne pas ajouter au total HT classique
+            if (!$isRental) {
+                $totalHt  += $lineHt;
+                $totalTax += $lineTax;
+            }
         }
         /* LOCATION */
         $location['is_rental'] = $quote['quote_type'] === 'rental_only' ? true : false;
