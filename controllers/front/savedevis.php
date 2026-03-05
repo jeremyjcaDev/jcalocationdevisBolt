@@ -164,12 +164,27 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 $db->execute('ROLLBACK');
             }
 
-            error_log('Erreur savedevis: ' . $e->getMessage());
+            $errorMsg = $e->getMessage();
+            $sqlError = '';
+            if (method_exists($db, 'getMsgError')) {
+                $sqlError = $db->getMsgError();
+            }
+
+            error_log('=== ERREUR SAVEDEVIS ===');
+            error_log('Message: ' . $errorMsg);
+            error_log('SQL Error: ' . $sqlError);
             error_log('Stack trace: ' . $e->getTraceAsString());
+            error_log('========================');
 
             die(json_encode([
                 'success' => false,
-                'message' => 'Erreur lors de la création du devis: ' . $e->getMessage()
+                'message' => 'Erreur lors de la création du devis: ' . $errorMsg,
+                'sql_error' => $sqlError,
+                'debug' => [
+                    'error' => $errorMsg,
+                    'sql_error' => $sqlError,
+                    'trace' => $e->getTraceAsString()
+                ]
             ]));
         }
     }

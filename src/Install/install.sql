@@ -96,7 +96,8 @@ CREATE TABLE IF NOT EXISTS `PREFIX_jca_quotes` (
 CREATE TABLE IF NOT EXISTS `PREFIX_jca_quote_items` (
   `id_quote_item` int(11) NOT NULL AUTO_INCREMENT,
   `id_quote` int(11) NOT NULL,
-  `id_product` int(11) NOT NULL,
+  `item_type` enum('product','delivery') NOT NULL DEFAULT 'product',
+  `id_product` int(11) NOT NULL DEFAULT 0,
   `product_reference` varchar(100) DEFAULT NULL,
   `product_name` varchar(255) NOT NULL,
   `quantity` int(11) NOT NULL DEFAULT 1,
@@ -111,6 +112,7 @@ CREATE TABLE IF NOT EXISTS `PREFIX_jca_quote_items` (
   PRIMARY KEY (`id_quote_item`),
   KEY `idx_id_quote` (`id_quote`),
   KEY `idx_id_product` (`id_product`),
+  KEY `idx_item_type` (`item_type`),
   CONSTRAINT `fk_quote_items_quote` FOREIGN KEY (`id_quote`) REFERENCES `PREFIX_jca_quotes` (`id_quote`) ON DELETE CASCADE,
   CONSTRAINT `fk_quote_items_rental_config` FOREIGN KEY (`id_rental_configuration`) REFERENCES `PREFIX_jca_rental_configurations` (`id_rental_configuration`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
