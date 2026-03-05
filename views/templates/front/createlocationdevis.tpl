@@ -299,9 +299,9 @@
                         btn.textContent = 'Création du devis...';
 
                         // Récupérer les informations nécessaires
-                        const products = Array.from(document.querySelectorAll('[data-product-id]')).map(el => el
-                            .dataset.productId);
-                        const mode = document.querySelector('[name="rental_duration"]:checked')?.value || null;
+                        const products = Array.from(document.querySelectorAll('[data-product-id]')).map(el => parseInt(el
+                            .dataset.productId));
+                        const mode = {$mode}; // Récupération de la durée depuis PHP
 
                         fetch(prestashop.urls.base_url + 'module/jca_locationdevis/savedevis', {
                                 method: 'POST',
