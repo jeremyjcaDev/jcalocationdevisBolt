@@ -301,6 +301,7 @@
                         const products = Array.from(document.querySelectorAll('[data-product-id]')).map(el => parseInt(el
                             .dataset.productId));
                         const mode = {$mode|intval}; // Récupération de la durée depuis PHP (36 ou 60)
+                        const ratePercentage = {if isset($rentalConfiguration.selected_rate)}{$rentalConfiguration.selected_rate}{else}0{/if};
 
                         {literal}
 
@@ -312,7 +313,8 @@
                                 body: JSON.stringify({
                                     quote_type: 'rental_only', // Ajout du type de devis
                                     id_products: products, // Envoi des ID produits
-                                    duration_month: mode // Envoi de la durée de location
+                                    duration_month: mode, // Envoi de la durée de location
+                                    rate_percentage: ratePercentage // Envoi du taux de location
                                 })
                             })
                             .then(response => response.json())

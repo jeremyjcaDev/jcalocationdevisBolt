@@ -100,6 +100,12 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 $durationMonths = (int)$data['duration_month'];
             }
 
+            // Récupérer le taux de location envoyé depuis le frontend
+            $ratePercentage = null;
+            if (isset($data['rate_percentage'])) {
+                $ratePercentage = (float)$data['rate_percentage'];
+            }
+
             // Récupérer les produits depuis le panier ou depuis les données envoyées
             $products = [];
             if (isset($data['products']) && !empty($data['products'])) {
@@ -191,11 +197,21 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
 
                 $quantity = isset($p['quantity']) ? (int)$p['quantity'] : 1;
                 $price = isset($p['price']) ? (float)$p['price'] : 0;
+                $originalPrice = $price;
+
+                // Déterminer le taux à utiliser (priorité au taux envoyé depuis le frontend)
+                $itemRate = null;
+                if ($isRental) {
+                    if ($ratePercentage !== null) {
+                        $itemRate = $ratePercentage;
+                    } elseif ($rentalConfiguration && isset($rentalConfiguration['selected_rate'])) {
+                        $itemRate = (float)$rentalConfiguration['selected_rate'];
+                    }
+                }
 
                 // Pour les locations, calculer le prix avec le taux
-                if ($isRental && $rentalConfiguration && isset($rentalConfiguration['selected_rate'])) {
-                    $rate = (float)$rentalConfiguration['selected_rate'];
-                    $price = round($price * (1 + ($rate / 100)), 2);
+                if ($isRental && $itemRate !== null) {
+                    $price = round($price * (1 + ($itemRate / 100)), 2);
                 }
 
                 $insertItem = [
@@ -205,10 +221,10 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                     'product_reference' => isset($p['reference']) ? pSQL($p['reference']) : '',
                     'quantity' => $quantity,
                     'price' => $price,
-                    'original_price' => isset($p['original_price']) ? (float)$p['original_price'] : $price,
+                    'original_price' => isset($p['original_price']) ? (float)$p['original_price'] : $originalPrice,
                     'is_rental' => $isRental ? 1 : 0,
                     'duration_months' => $durationMonths,
-                    'rate_percentage' => ($isRental && $rentalConfiguration) ? (float)$rentalConfiguration['selected_rate'] : null,
+                    'rate_percentage' => $itemRate,
                     'id_rental_configuration' => $idRentalConfiguration,
                     'date_add' => date('Y-m-d H:i:s')
                 ];
