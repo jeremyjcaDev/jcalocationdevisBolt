@@ -113,12 +113,19 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
             }
 
             // Insérer le devis avec les infos client
+            $phone = '';
+            if (isset($customer->phone_mobile) && !empty($customer->phone_mobile)) {
+                $phone = $customer->phone_mobile;
+            } elseif (isset($customer->phone) && !empty($customer->phone)) {
+                $phone = $customer->phone;
+            }
+
             $insertQuote = [
                 'quote_number' => pSQL($quoteNumber),
                 'quote_type' => $isRental ? 'rental_only' : 'standard',
                 'customer_name' => pSQL($customer->firstname . ' ' . $customer->lastname),
                 'customer_email' => pSQL($customer->email),
-                'customer_phone' => pSQL($customer->phone_mobile ?: ''),
+                'customer_phone' => pSQL($phone),
                 'status' => 'pending',
                 'valid_until' => pSQL($expiryDate),
                 'date_add' => date('Y-m-d H:i:s'),
