@@ -27,31 +27,54 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
             // Récupérer les settings
             $settings = $this->getQuoteSettings();
 
-            // Générer le numéro de devis
-            $prefix = !empty($settings['quote_number_prefix']) ? $settings['quote_number_prefix'] : 'Q';
-            $prefixLength = strlen($prefix) + 1;
+            // Générer le numéro de devis selon la configuration
+            $prefix = !empty($settings['quote_number_prefix']) ? $settings['quote_number_prefix'] : 'DEVIS';
+            $separator = !empty($settings['quote_number_separator']) ? $settings['quote_number_separator'] : '-';
+            $yearFormat = isset($settings['quote_number_year_format']) ? $settings['quote_number_year_format'] : 'YYYY';
+            $padding = isset($settings['quote_number_padding']) ? (int)$settings['quote_number_padding'] : 3;
+            $counter = isset($settings['quote_number_counter']) ? (int)$settings['quote_number_counter'] : 0;
+            $resetYearly = isset($settings['quote_number_reset_yearly']) ? (bool)$settings['quote_number_reset_yearly'] : true;
+            $lastYear = isset($settings['quote_number_last_year']) ? (int)$settings['quote_number_last_year'] : 0;
 
-            // Récupérer tous les numéros de devis avec ce préfixe
-            $sql = 'SELECT quote_number
-                    FROM ' . _DB_PREFIX_ . 'jca_quotes
-                    WHERE quote_number LIKE "' . pSQL($prefix) . '%"
-                    ORDER BY id_quote DESC
-                    LIMIT 100';
-            $results = $db->executeS($sql);
+            $currentYear = (int)date('Y');
 
-            $maxNum = 0;
-            if ($results) {
-                foreach ($results as $row) {
-                    // Extraire la partie numérique
-                    $numPart = substr($row['quote_number'], strlen($prefix));
-                    if (is_numeric($numPart)) {
-                        $maxNum = max($maxNum, (int)$numPart);
-                    }
+            // Vérifier si on doit réinitialiser le compteur (changement d'année)
+            if ($resetYearly && $lastYear > 0 && $currentYear != $lastYear) {
+                $counter = 0;
+                // Mettre à jour l'année dans les settings
+                $db->update('jca_quote_settings', [
+                    'quote_number_last_year' => $currentYear,
+                    'quote_number_counter' => 0
+                ], 'id_quote_settings = ' . (int)$settings['id_quote_settings']);
+            }
+
+            // Incrémenter le compteur
+            $counter++;
+
+            // Construire le numéro de devis
+            $parts = [];
+
+            if (!empty($prefix)) {
+                $parts[] = $prefix;
+            }
+
+            if (!empty($yearFormat)) {
+                if ($yearFormat === 'YY') {
+                    $parts[] = substr((string)$currentYear, -2);
+                } else if ($yearFormat === 'YYYY') {
+                    $parts[] = (string)$currentYear;
                 }
             }
 
-            $nextNumber = $maxNum + 1;
-            $quoteNumber = $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+            $parts[] = str_pad($counter, $padding, '0', STR_PAD_LEFT);
+
+            $quoteNumber = implode($separator, $parts);
+
+            // Mettre à jour le compteur dans les settings
+            $db->update('jca_quote_settings', [
+                'quote_number_counter' => $counter,
+                'date_upd' => date('Y-m-d H:i:s')
+            ], 'id_quote_settings = ' . (int)$settings['id_quote_settings']);
 
             // Calculer la date d'expiration
             $validityHours = !empty($settings['validity_hours']) ? (int)$settings['validity_hours'] : 720;
