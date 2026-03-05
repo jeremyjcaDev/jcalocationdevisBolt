@@ -84,9 +84,47 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
             $db->execute('START TRANSACTION');
 
             // Type de devis (location ou vente standard)
-            $isRental = isset($data['isRental']) && $data['isRental'];
-            $durationMonths = isset($data['durationMonths']) ? (int)$data['durationMonths'] : null;
-            $products = isset($data['products']) ? $data['products'] : [];
+            // Support à la fois isRental (backend) et quote_type (frontend)
+            $isRental = false;
+            if (isset($data['isRental']) && $data['isRental']) {
+                $isRental = true;
+            } elseif (isset($data['quote_type']) && $data['quote_type'] === 'rental_only') {
+                $isRental = true;
+            }
+
+            // Support à la fois durationMonths et duration_month
+            $durationMonths = null;
+            if (isset($data['durationMonths'])) {
+                $durationMonths = (int)$data['durationMonths'];
+            } elseif (isset($data['duration_month'])) {
+                $durationMonths = (int)$data['duration_month'];
+            }
+
+            // Récupérer les produits depuis le panier ou depuis les données envoyées
+            $products = [];
+            if (isset($data['products']) && !empty($data['products'])) {
+                // Format backend avec produits complets
+                $products = $data['products'];
+            } elseif (isset($data['id_products']) && !empty($data['id_products'])) {
+                // Format frontend avec juste les IDs - récupérer depuis le panier
+                $cart = $this->context->cart;
+                $cartProducts = $cart->getProducts();
+
+                foreach ($data['id_products'] as $productId) {
+                    foreach ($cartProducts as $cartProduct) {
+                        if ((int)$cartProduct['id_product'] == (int)$productId) {
+                            $products[] = [
+                                'id_product' => (int)$cartProduct['id_product'],
+                                'name' => $cartProduct['name'],
+                                'reference' => $cartProduct['reference'],
+                                'price' => (float)$cartProduct['price'],
+                                'quantity' => (int)$cartProduct['cart_quantity']
+                            ];
+                            break;
+                        }
+                    }
+                }
+            }
 
             // Calculer le total
             $totalPriceHT = 0;
