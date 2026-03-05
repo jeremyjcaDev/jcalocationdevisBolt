@@ -72,22 +72,15 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 }
             }
 
-            // Créer le client quote si nécessaire
-            $idQuoteCustomer = $this->createOrUpdateQuoteCustomer($customer);
-
-            // Insérer le devis
+            // Insérer le devis avec les infos client
             $insertQuote = [
-                'id_quote_customer' => (int)$idQuoteCustomer,
                 'quote_number' => pSQL($quoteNumber),
-                'quote_date' => date('Y-m-d H:i:s'),
-                'expiry_date' => pSQL($expiryDate),
+                'quote_type' => $isRental ? 'rental_only' : 'standard',
+                'customer_name' => pSQL($customer->firstname . ' ' . $customer->lastname),
+                'customer_email' => pSQL($customer->email),
+                'customer_phone' => pSQL($customer->phone_mobile ?: ''),
                 'status' => 'pending',
-                'total_ht' => 0, // Sera calculé après l'ajout des items
-                'total_ttc' => 0,
-                'tax_amount' => 0,
-                'is_rental' => $isRental ? 1 : 0,
-                'duration_months' => $durationMonths,
-                'id_rental_configuration' => ($rentalConfiguration ? (int)$rentalConfiguration['id_rental_configuration'] : null),
+                'valid_until' => pSQL($expiryDate),
                 'date_add' => date('Y-m-d H:i:s'),
                 'date_upd' => date('Y-m-d H:i:s')
             ];
@@ -100,7 +93,6 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
             $idQuote = (int)$db->Insert_ID();
 
             // Items
-            $totalHT = 0;
             foreach ($products as $p) {
                 $idRentalConfiguration = isset($p['id_rental_configuration']) ? (int)$p['id_rental_configuration'] : null;
 
@@ -113,36 +105,27 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 }
 
                 $quantity = isset($p['quantity']) ? (int)$p['quantity'] : 1;
-                $unitPrice = isset($p['price']) ? (float)$p['price'] : 0;
-                $itemType = isset($p['item_type']) ? pSQL($p['item_type']) : 'product';
+                $price = isset($p['price']) ? (float)$p['price'] : 0;
 
-                // Pour les locations, calculer le prix mensuel
-                if ($isRental && $rentalConfiguration && $itemType !== 'delivery') {
-                    $totalProductHT = $unitPrice * $quantity;
+                // Pour les locations, calculer le prix avec le taux
+                if ($isRental && $rentalConfiguration && isset($rentalConfiguration['selected_rate'])) {
                     $rate = (float)$rentalConfiguration['selected_rate'];
-                    $monthlyPrice = round(($totalProductHT / $durationMonths) * (1 + ($rate / 100)), 2);
-                    $unitPrice = $monthlyPrice / $quantity;
-                    $totalHT += $monthlyPrice;
-                } else {
-                    $totalHT += $unitPrice * $quantity;
+                    $price = round($price * (1 + ($rate / 100)), 2);
                 }
 
                 $insertItem = [
                     'id_quote' => $idQuote,
                     'id_product' => isset($p['id_product']) ? (int)$p['id_product'] : 0,
-                    'id_product_attribute' => isset($p['id_product_attribute']) ? (int)$p['id_product_attribute'] : 0,
                     'product_name' => pSQL($p['name']),
                     'product_reference' => isset($p['reference']) ? pSQL($p['reference']) : '',
                     'quantity' => $quantity,
-                    'unit_price' => $unitPrice,
-                    'total_price' => $unitPrice * $quantity,
-                    'tax_rate' => isset($p['tax_rate']) ? (float)$p['tax_rate'] : 0,
+                    'price' => $price,
+                    'original_price' => isset($p['original_price']) ? (float)$p['original_price'] : $price,
                     'is_rental' => $isRental ? 1 : 0,
                     'duration_months' => $durationMonths,
+                    'rate_percentage' => ($isRental && $rentalConfiguration) ? (float)$rentalConfiguration['selected_rate'] : null,
                     'id_rental_configuration' => $idRentalConfiguration,
-                    'item_type' => $itemType,
-                    'date_add' => date('Y-m-d H:i:s'),
-                    'date_upd' => date('Y-m-d H:i:s')
+                    'date_add' => date('Y-m-d H:i:s')
                 ];
 
                 $result = $db->insert('jca_quote_items', $insertItem);
@@ -151,31 +134,12 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 }
             }
 
-            // Mettre à jour le total du devis
-            $taxAmount = $totalHT * 0.20; // TVA 20%
-            $totalTTC = $totalHT + $taxAmount;
-
-            $updateQuote = [
-                'total_ht' => $totalHT,
-                'total_ttc' => $totalTTC,
-                'tax_amount' => $taxAmount
-            ];
-
-            $result = $db->update('jca_quotes', $updateQuote, 'id_quote = ' . $idQuote);
-            if (!$result) {
-                throw new Exception('Erreur lors de la mise à jour du total');
-            }
-
             // Valider la transaction
             $db->execute('COMMIT');
 
             // Envoyer l'email de notification
             try {
-                $quote = $db->getRow('SELECT q.*, qc.email as customer_email, qc.firstname as customer_firstname, qc.lastname as customer_lastname
-                                      FROM ' . _DB_PREFIX_ . 'jca_quotes q
-                                      LEFT JOIN ' . _DB_PREFIX_ . 'jca_quote_customers qc ON q.id_quote_customer = qc.id_quote_customer
-                                      WHERE q.id_quote = ' . $idQuote);
-
+                $quote = $db->getRow('SELECT * FROM ' . _DB_PREFIX_ . 'jca_quotes WHERE id_quote = ' . $idQuote);
                 $items = $db->executeS('SELECT * FROM ' . _DB_PREFIX_ . 'jca_quote_items WHERE id_quote = ' . $idQuote);
 
                 $emailService = new QuoteEmailService();
@@ -220,36 +184,5 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
         }
 
         return $settings;
-    }
-
-    private function createOrUpdateQuoteCustomer($customer)
-    {
-        $db = Db::getInstance();
-
-        // Vérifier si le client existe déjà
-        $sql = 'SELECT id_quote_customer FROM ' . _DB_PREFIX_ . 'jca_quote_customers WHERE id_customer = ' . (int)$customer->id;
-        $existing = $db->getRow($sql);
-
-        if ($existing) {
-            return (int)$existing['id_quote_customer'];
-        }
-
-        // Créer un nouveau client quote
-        $insertCustomer = [
-            'id_customer' => (int)$customer->id,
-            'firstname' => pSQL($customer->firstname),
-            'lastname' => pSQL($customer->lastname),
-            'email' => pSQL($customer->email),
-            'phone' => pSQL($customer->phone_mobile ?: ''),
-            'date_add' => date('Y-m-d H:i:s'),
-            'date_upd' => date('Y-m-d H:i:s')
-        ];
-
-        $result = $db->insert('jca_quote_customers', $insertCustomer);
-        if (!$result) {
-            throw new Exception('Erreur lors de la création du client');
-        }
-
-        return (int)$db->Insert_ID();
     }
 }
