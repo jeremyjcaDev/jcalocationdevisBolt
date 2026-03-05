@@ -284,7 +284,6 @@
 
 
 
-                                {literal}
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
                     const btn = document.getElementById('submitQuote');
@@ -302,6 +301,8 @@
                         const products = Array.from(document.querySelectorAll('[data-product-id]')).map(el => parseInt(el
                             .dataset.productId));
                         const mode = {$mode|intval}; // Récupération de la durée depuis PHP (36 ou 60)
+
+                        {literal}
 
                         fetch(prestashop.urls.base_url + 'module/jca_locationdevis/savedevis', {
                                 method: 'POST',
