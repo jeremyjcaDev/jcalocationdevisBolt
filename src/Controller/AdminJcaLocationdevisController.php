@@ -434,13 +434,23 @@ class AdminJcaLocationdevisController extends FrameworkBundleAdminController
                 return $this->json(['success' => true, 'message' => 'Configuration créée avec succès']);
 
             case 'update':
+                error_log('RentalConfiguration Update - Data received: ' . json_encode($data));
+
+                $priceMin = isset($data['priceMin']) ? (float)$data['priceMin'] : null;
+                $priceMax = isset($data['priceMax']) ? (float)$data['priceMax'] : null;
+                $duration36 = isset($data['duration36Months']) ? (float)$data['duration36Months'] : null;
+                $duration60 = isset($data['duration60Months']) ? (float)$data['duration60Months'] : null;
+                $sortOrder = isset($data['sortOrder']) ? (int)$data['sortOrder'] : null;
+
+                error_log("Converted values - priceMin: $priceMin, priceMax: $priceMax, duration36: $duration36, duration60: $duration60");
+
                 $this->get('prestashop.core.command_bus')->handle(new UpdateRentalConfigurationCommand(
                     $data['id'],
-                    $data['priceMin'] ?? null,
-                    $data['priceMax'] ?? null,
-                    $data['duration36Months'] ?? null,
-                    $data['duration60Months'] ?? null,
-                    $data['sortOrder'] ?? null
+                    $priceMin,
+                    $priceMax,
+                    $duration36,
+                    $duration60,
+                    $sortOrder
                 ));
                 return $this->json(['success' => true, 'message' => 'Configuration mise à jour avec succès']);
 

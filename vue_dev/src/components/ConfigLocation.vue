@@ -26,7 +26,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, index) in configurations" :key="row.id || index">
+          <tr v-for="(row, index) in configurations" :key="row.id || row.tempId || index" :class="{ 'saving': isSaving(row) }">
             <td>
               <input
                 v-model.number="row.price_min"
@@ -35,6 +35,7 @@
                 min="0"
                 class="input-field input-number"
                 placeholder="0.00"
+                @input="debounceSave(row)"
                 @blur="saveRow(row)"
               />
             </td>
@@ -46,6 +47,7 @@
                 min="0"
                 class="input-field input-number"
                 placeholder="0.00"
+                @input="debounceSave(row)"
                 @blur="saveRow(row)"
               />
             </td>
@@ -58,6 +60,7 @@
                 max="100"
                 class="input-field input-number"
                 placeholder="0.00"
+                @input="debounceSave(row)"
                 @blur="saveRow(row)"
               />
             </td>
@@ -70,6 +73,7 @@
                 max="100"
                 class="input-field input-number"
                 placeholder="0.00"
+                @input="debounceSave(row)"
                 @blur="saveRow(row)"
               />
             </td>
@@ -78,6 +82,7 @@
                 class="btn-delete"
                 @click="deleteRow(row, index)"
                 title="Supprimer"
+                :disabled="isSaving(row)"
               >
                 <span class="delete-icon">×</span>
               </button>
@@ -108,7 +113,9 @@ export default {
       configurations: [],
       loading: true,
       error: null,
-      saveMessage: null
+      saveMessage: null,
+      savingRows: new Set(),
+      saveTimeouts: {}
     }
   },
   async mounted() {
@@ -129,14 +136,28 @@ export default {
     },
 
     addRow() {
-      this.configurations.push({
+      const newRow = {
         price_min: 0,
         price_max: 0,
         duration_36_months: 0,
         duration_60_months: 0,
         sort_order: this.configurations.length,
-        isNew: true
-      })
+        isNew: true,
+        tempId: Date.now()
+      }
+      this.configurations.push(newRow)
+    },
+
+    debounceSave(row) {
+      const rowId = row.id || row.tempId
+
+      if (this.saveTimeouts[rowId]) {
+        clearTimeout(this.saveTimeouts[rowId])
+      }
+
+      this.saveTimeouts[rowId] = setTimeout(() => {
+        this.saveRow(row)
+      }, 800)
     },
 
     async saveRow(row) {
@@ -144,30 +165,42 @@ export default {
         return
       }
 
+      const rowId = row.id || row.tempId
+
+      if (this.savingRows.has(rowId)) {
+        return
+      }
+
       try {
+        this.savingRows.add(rowId)
+        this.error = null
+
         if (row.isNew) {
           const newRow = await rentalConfigService.create({
-            price_min: row.price_min || 0,
-            price_max: row.price_max || 0,
-            duration_36_months: row.duration_36_months || 0,
-            duration_60_months: row.duration_60_months || 0,
+            price_min: parseFloat(row.price_min) || 0,
+            price_max: parseFloat(row.price_max) || 0,
+            duration_36_months: parseFloat(row.duration_36_months) || 0,
+            duration_60_months: parseFloat(row.duration_60_months) || 0,
             sort_order: row.sort_order
           })
           Object.assign(row, newRow)
           delete row.isNew
+          delete row.tempId
           this.showSaveMessage('Configuration créée avec succès')
         } else if (row.id) {
           await rentalConfigService.update(row.id, {
-            price_min: row.price_min || 0,
-            price_max: row.price_max || 0,
-            duration_36_months: row.duration_36_months || 0,
-            duration_60_months: row.duration_60_months || 0
+            price_min: parseFloat(row.price_min) || 0,
+            price_max: parseFloat(row.price_max) || 0,
+            duration_36_months: parseFloat(row.duration_36_months) || 0,
+            duration_60_months: parseFloat(row.duration_60_months) || 0
           })
           this.showSaveMessage('Configuration mise à jour')
         }
       } catch (err) {
         this.error = 'Erreur lors de la sauvegarde: ' + err.message
         console.error(err)
+      } finally {
+        this.savingRows.delete(rowId)
       }
     },
 
@@ -186,6 +219,11 @@ export default {
         this.error = 'Erreur lors de la suppression: ' + err.message
         console.error(err)
       }
+    },
+
+    isSaving(row) {
+      const rowId = row.id || row.tempId
+      return this.savingRows.has(rowId)
     },
 
     showSaveMessage(message) {
@@ -295,6 +333,11 @@ export default {
   background: #fafafa;
 }
 
+.data-table tbody tr.saving {
+  background: #fff9e6;
+  transition: background 0.3s ease;
+}
+
 .input-field {
   width: 100%;
   padding: 0.5rem 0.75rem;
@@ -341,6 +384,11 @@ export default {
 .btn-delete:hover {
   background: #fff3f3;
   border-color: #d32f2f;
+}
+
+.btn-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .delete-icon {

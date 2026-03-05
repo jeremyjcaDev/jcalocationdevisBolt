@@ -25,24 +25,29 @@ class UpdateRentalConfigurationHandler
             throw new \InvalidArgumentException('Rental configuration not found');
         }
 
-        if ($command->getPriceMin() !== null) {
-            $rentalConfig->setPriceMin($command->getPriceMin());
+        $priceMin = $command->getPriceMin();
+        if ($priceMin !== null) {
+            $rentalConfig->setPriceMin((float)$priceMin);
         }
 
-        if ($command->getPriceMax() !== null) {
-            $rentalConfig->setPriceMax($command->getPriceMax());
+        $priceMax = $command->getPriceMax();
+        if ($priceMax !== null) {
+            $rentalConfig->setPriceMax((float)$priceMax);
         }
 
-        if ($command->getDuration36Months() !== null) {
-            $rentalConfig->setDuration36Months($command->getDuration36Months());
+        $duration36 = $command->getDuration36Months();
+        if ($duration36 !== null) {
+            $rentalConfig->setDuration36Months((float)$duration36);
         }
 
-        if ($command->getDuration60Months() !== null) {
-            $rentalConfig->setDuration60Months($command->getDuration60Months());
+        $duration60 = $command->getDuration60Months();
+        if ($duration60 !== null) {
+            $rentalConfig->setDuration60Months((float)$duration60);
         }
 
-        if ($command->getSortOrder() !== null) {
-            $rentalConfig->setSortOrder($command->getSortOrder());
+        $sortOrder = $command->getSortOrder();
+        if ($sortOrder !== null) {
+            $rentalConfig->setSortOrder((int)$sortOrder);
         }
 
         $rentalConfig->setDateUpd(new \DateTimeImmutable());
