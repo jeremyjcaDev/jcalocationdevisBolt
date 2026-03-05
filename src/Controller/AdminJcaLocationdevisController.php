@@ -557,16 +557,32 @@ class AdminJcaLocationdevisController extends FrameworkBundleAdminController
         $query = $data['query'] ?? '';
         $limit = $data['limit'] ?? 50;
 
+        $products = [];
 
-        try {
-            $products = $this->get('prestashop.core.query_bus')->handle(new SearchProductsForAssociation(
-                $query,
-                $lang->getId(),
-                (int) $shopId,
-                (int) $limit
-            ));
-        } catch (ProductConstraintException $e) {
-            return $this->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        if (is_numeric($query)) {
+            $productId = (int) $query;
+            $productObj = new \Product($productId, false, $lang->getId());
+
+            if (\Validate::isLoadedObject($productObj) && $productObj->active) {
+                $products = [new \PrestaShop\PrestaShop\Core\Search\SearchResult(
+                    $productObj->id,
+                    $productObj->name,
+                    \Context::getContext()->link->getImageLink($productObj->link_rewrite, $productObj->getCoverWs(), 'home_default')
+                )];
+            }
+        }
+
+        if (empty($products)) {
+            try {
+                $products = $this->get('prestashop.core.query_bus')->handle(new SearchProductsForAssociation(
+                    $query,
+                    $lang->getId(),
+                    (int) $shopId,
+                    (int) $limit
+                ));
+            } catch (ProductConstraintException $e) {
+                return $this->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            }
         }
 
         if (empty($products)) {
