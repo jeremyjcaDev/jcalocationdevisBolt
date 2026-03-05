@@ -22,6 +22,16 @@ class Jca_locationdevisCreatelocationdevisModuleFrontController extends ModuleFr
 
         // Sinon, tout est ok → afficher le devis
 
+        // Assigner les informations du client au template
+        $this->context->smarty->assign([
+            'customer' => [
+                'firstname' => $customer->firstname,
+                'lastname' => $customer->lastname,
+                'email' => $customer->email,
+                'phone' => !empty($customer->phone_mobile) ? $customer->phone_mobile : $customer->phone,
+            ]
+        ]);
+
         // Récupérer le paramètre 'customization' depuis l'URL
         $customization = Tools::getValue('customization');
         $mode = Tools::getValue('mode');
@@ -57,13 +67,22 @@ class Jca_locationdevisCreatelocationdevisModuleFrontController extends ModuleFr
                     // Assigner les produits récupérés au template
                     $this->context->smarty->assign('products', $products);
 
+                    // Initialiser les variables par défaut
+                    $settings = $this->getQuoteSettings();
+                    $date = [
+                        'created_at' => date('d/m/Y'),
+                        'valid_until' => date('d/m/Y', strtotime("+{$settings['validity_hours']} hours"))
+                    ];
+                    $this->context->smarty->assign('date', $date);
+                    $this->context->smarty->assign('mode', (int)$mode);
+
                     // Calculer le prix total HT des produits
                     $totalPriceHT = array_reduce($products, function ($sum, $product) {
                         return $sum + $product['price'] * $product['quantity'];
                     }, 0);
 
                     // Rechercher la plage correspondante dans la table ps_jca_rental_configurations
-                    $sql = 'SELECT id_rental_configuration, price_min, price_max, sort_order, date_add, date_upd, 
+                    $sql = 'SELECT id_rental_configuration, price_min, price_max, sort_order, date_add, date_upd,
                             IF(' . (int)$mode . ' = 36, duration_36_months, duration_60_months) AS selected_rate
                             FROM `' . _DB_PREFIX_ . 'jca_rental_configurations`
                             WHERE price_min <= ' . (float)$totalPriceHT . ' AND price_max >= ' . (float)$totalPriceHT . '
@@ -75,16 +94,10 @@ class Jca_locationdevisCreatelocationdevisModuleFrontController extends ModuleFr
 
                         // Calculer le prix par mois
                         $monthlyPriceHT = round(($totalPriceHT / (int)$mode) * (1 + ($rentalConfiguration['selected_rate'] / 100)), 2);
-                        $date = [];
-                        $settings = $this->getQuoteSettings();
-                        $date['created_at'] = date('d/m/Y');
-                        $date['valid_until'] = date('d/m/Y', strtotime("+{$settings['validity_hours']} hours"));
-                        // Assigner le prix par mois au template
-                        $this->context->smarty->assign('date', $date);
                         $this->context->smarty->assign('monthlyPriceHT', $monthlyPriceHT);
-                        $this->context->smarty->assign('mode', (int)$mode);
                     } else {
                         $this->context->smarty->assign('rentalConfigurationError', 'No matching rental configuration found.');
+                        $this->context->smarty->assign('monthlyPriceHT', 0);
                     }
                     $cart = $this->context->cart;
                     $deliveryOptions = $cart->getDeliveryOptionList();
