@@ -316,17 +316,24 @@
 
                         {literal}
 
+                        console.log('Products array:', products);
+                        console.log('Mode:', mode);
+                        console.log('Rate:', ratePercentage);
+
+                        const requestData = {
+                            quote_type: 'rental_only',
+                            products: products,
+                            duration_month: mode,
+                            rate_percentage: ratePercentage
+                        };
+                        console.log('Sending request:', requestData);
+
                         fetch(prestashop.urls.base_url + 'module/jca_locationdevis/savedevis', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json'
                                 },
-                                body: JSON.stringify({
-                                    quote_type: 'rental_only', // Ajout du type de devis
-                                    products: products, // Envoi des produits complets
-                                    duration_month: mode, // Envoi de la durée de location
-                                    rate_percentage: ratePercentage // Envoi du taux de location
-                                })
+                                body: JSON.stringify(requestData)
                             })
                             .then(response => response.json())
                             .then(data => {
