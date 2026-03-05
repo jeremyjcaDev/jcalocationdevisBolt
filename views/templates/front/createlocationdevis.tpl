@@ -34,7 +34,7 @@
                         {$customer.email}</div>
                     <div class="mb-2 flex items-center justify-between border-b pb-2-t border-gray-200"><span
                             class="font-medium text-gray-500 ">Téléphone:</span>
-                        {$customer.phone|default:'N/A'}</div>
+                        {$customer.phone|default:'non renseigné'}</div>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg shadow">
                     <h2 class="font-semibold text-lg mb-3-t">Dates</h2>
