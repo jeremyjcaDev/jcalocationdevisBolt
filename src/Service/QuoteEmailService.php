@@ -185,24 +185,92 @@ class QuoteEmailService
     {
         $subject = 'Nouveau devis #' . $quote['quote_number'];
 
+        // Vérifier si c'est un devis de location
+        $isRental = false;
+        $durationMonths = null;
+        foreach ($items as $item) {
+            if (isset($item['is_rental']) && $item['is_rental'] == 1) {
+                $isRental = true;
+                if (isset($item['duration_months'])) {
+                    $durationMonths = (int)$item['duration_months'];
+                }
+                break;
+            }
+        }
+
         $itemsHtml = '';
         $total = 0;
-        foreach ($items as $item) {
-            $price = isset($item['price']) ? (float)$item['price'] : (isset($item['unit_price']) ? (float)$item['unit_price'] : 0);
-            $quantity = isset($item['quantity']) ? (int)$item['quantity'] : 1;
-            $subtotal = $quantity * $price;
-            $total += $subtotal;
-            $itemsHtml .= '<tr>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">' . htmlspecialchars($item['product_name']) . '</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">' . $quantity . '</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">' . number_format($price, 2, ',', ' ') . ' €</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">' . number_format($subtotal, 2, ',', ' ') . ' €</td>
-            </tr>';
+
+        if ($isRental) {
+            // Affichage pour devis de location
+            foreach ($items as $item) {
+                if (isset($item['item_type']) && $item['item_type'] === 'delivery') {
+                    continue; // On ne montre pas la livraison dans les locations
+                }
+
+                $price = isset($item['price']) ? (float)$item['price'] : 0;
+                $quantity = isset($item['quantity']) ? (int)$item['quantity'] : 1;
+                $total += $price; // Pour la location, on additionne les mensualités
+
+                $itemsHtml .= '<tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">' . htmlspecialchars($item['product_name']) . '</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">' . $quantity . '</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">' . number_format($price, 2, ',', ' ') . ' € / mois</td>
+                </tr>';
+            }
+        } else {
+            // Affichage pour devis standard
+            foreach ($items as $item) {
+                $price = isset($item['price']) ? (float)$item['price'] : (isset($item['unit_price']) ? (float)$item['unit_price'] : 0);
+                $quantity = isset($item['quantity']) ? (int)$item['quantity'] : 1;
+                $subtotal = $quantity * $price;
+                $total += $subtotal;
+
+                $itemsHtml .= '<tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee;">' . htmlspecialchars($item['product_name']) . '</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">' . $quantity . '</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">' . number_format($price, 2, ',', ' ') . ' €</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">' . number_format($subtotal, 2, ',', ' ') . ' €</td>
+                </tr>';
+            }
         }
 
         // Gérer les différents formats de date
         $dateAdd = isset($quote['date_add']) ? $quote['date_add'] : (isset($quote['quote_date']) ? $quote['quote_date'] : date('Y-m-d H:i:s'));
         $validUntil = isset($quote['valid_until']) ? $quote['valid_until'] : (isset($quote['expiry_date']) ? $quote['expiry_date'] : date('Y-m-d H:i:s', strtotime('+30 days')));
+
+        // En-têtes de tableau différents selon le type
+        $tableHeaders = $isRental
+            ? '<tr style="background: #2c3e50; color: white;">
+                <th style="padding: 10px; text-align: left;">Produit</th>
+                <th style="padding: 10px; text-align: center;">Quantité</th>
+                <th style="padding: 10px; text-align: right;">Mensualité</th>
+            </tr>'
+            : '<tr style="background: #2c3e50; color: white;">
+                <th style="padding: 10px; text-align: left;">Produit</th>
+                <th style="padding: 10px; text-align: center;">Quantité</th>
+                <th style="padding: 10px; text-align: right;">Prix unitaire</th>
+                <th style="padding: 10px; text-align: right;">Sous-total</th>
+            </tr>';
+
+        // Pied de tableau différent selon le type
+        $tableFooter = $isRental
+            ? '<tr style="background: #f8f9fa; font-weight: bold;">
+                <td colspan="2" style="padding: 10px; text-align: right;">Total mensuel HT:</td>
+                <td style="padding: 10px; text-align: right;">' . number_format($total, 2, ',', ' ') . ' € / mois</td>
+            </tr>'
+            : '<tr style="background: #f8f9fa; font-weight: bold;">
+                <td colspan="3" style="padding: 10px; text-align: right;">Total HT:</td>
+                <td style="padding: 10px; text-align: right;">' . number_format($total, 2, ',', ' ') . ' €</td>
+            </tr>';
+
+        // Information sur la durée pour les locations
+        $durationInfo = '';
+        if ($isRental && $durationMonths) {
+            $durationInfo = '<p style="background: #e3f2fd; padding: 10px; border-left: 4px solid #2196f3; margin: 15px 0;">
+                <strong>Durée de location :</strong> ' . $durationMonths . ' mois
+            </p>';
+        }
 
         $html = '
         <html>
@@ -217,28 +285,23 @@ class QuoteEmailService
 
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
                     <h3 style="margin-top: 0;">Détails du devis</h3>
+                    <p><strong>Type:</strong> ' . ($isRental ? 'Location' : 'Vente') . '</p>
                     <p><strong>Date:</strong> ' . date('d/m/Y', strtotime($dateAdd)) . '</p>
                     <p><strong>Validité:</strong> jusqu\'au ' . date('d/m/Y', strtotime($validUntil)) . '</p>
                     <p><strong>Statut:</strong> ' . ucfirst($quote['status'] ?? 'pending') . '</p>
                 </div>
 
+                ' . $durationInfo . '
+
                 <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
                     <thead>
-                        <tr style="background: #2c3e50; color: white;">
-                            <th style="padding: 10px; text-align: left;">Produit</th>
-                            <th style="padding: 10px; text-align: center;">Quantité</th>
-                            <th style="padding: 10px; text-align: right;">Prix unitaire</th>
-                            <th style="padding: 10px; text-align: right;">Sous-total</th>
-                        </tr>
+                        ' . $tableHeaders . '
                     </thead>
                     <tbody>
                         ' . $itemsHtml . '
                     </tbody>
                     <tfoot>
-                        <tr style="background: #f8f9fa; font-weight: bold;">
-                            <td colspan="3" style="padding: 10px; text-align: right;">Total HT:</td>
-                            <td style="padding: 10px; text-align: right;">' . number_format($total, 2, ',', ' ') . ' €</td>
-                        </tr>
+                        ' . $tableFooter . '
                     </tfoot>
                 </table>
 

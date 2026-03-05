@@ -45,6 +45,8 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
             $idQuote = (int) Db::getInstance()->Insert_ID();
 
             $products = [];
+            $rentalConfiguration = null;
+            $durationMonths = null;
 
             if ($quoteType === 'standard') {
                 // Récupérer les produits du panier
@@ -52,19 +54,36 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
             } else {
                 // Récupérer les produits à partir des id_products envoyés
                 $productIds = isset($input['id_products']) ? $input['id_products'] : [];
+                $durationMonths = isset($input['duration_month']) ? (int)$input['duration_month'] : null;
 
+                $totalPriceHT = 0;
                 foreach ($productIds as $productId) {
                     $product = new Product((int)$productId, false, $this->context->language->id);
 
                     if (Validate::isLoadedObject($product)) {
+                        $priceHT = Product::getPriceStatic($product->id, false);
+                        $totalPriceHT += $priceHT;
+
                         $products[] = [
                             'id_product' => $product->id,
                             'reference' => $product->reference,
                             'name' => $product->name,
-                            'cart_quantity' => 1, // Par défaut, quantité 1
-                            'price' => Product::getPriceStatic($product->id, true),
+                            'cart_quantity' => 1,
+                            'price' => $priceHT,
                         ];
                     }
+                }
+
+                // Récupérer la configuration de location correspondante
+                if ($durationMonths && $totalPriceHT > 0) {
+                    $rateColumn = ($durationMonths == 36) ? 'duration_36_months' : 'duration_60_months';
+                    $sql = 'SELECT id_rental_configuration, price_min, price_max, ' . $rateColumn . ' AS selected_rate
+                            FROM ' . _DB_PREFIX_ . 'jca_rental_configurations
+                            WHERE price_min <= ' . (float)$totalPriceHT . '
+                            AND price_max >= ' . (float)$totalPriceHT . '
+                            ORDER BY sort_order ASC
+                            LIMIT 1';
+                    $rentalConfiguration = Db::getInstance()->getRow($sql);
                 }
             }
 
@@ -73,7 +92,7 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 $idRentalConfiguration = isset($p['id_rental_configuration']) ? (int)$p['id_rental_configuration'] : null;
 
                 if ($idRentalConfiguration) {
-                    $exists = Db::getInstance()->getValue('SELECT COUNT(*) FROM ps_jca_rental_configurations WHERE id_rental_configuration = ' . $idRentalConfiguration);
+                    $exists = Db::getInstance()->getValue('SELECT COUNT(*) FROM ' . _DB_PREFIX_ . 'jca_rental_configurations WHERE id_rental_configuration = ' . $idRentalConfiguration);
 
                     if ($exists == 0) {
                         throw new Exception('Invalid id_rental_configuration: ' . $idRentalConfiguration);
@@ -92,8 +111,16 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                     'date_add'             => $now,
                 ];
 
-                // Ajouter id_rental_configuration uniquement si elle n'est pas NULL
-                if (!empty($p['id_rental_configuration'])) {
+                // Pour les devis de location, ajouter les informations de location
+                if ($quoteType !== 'standard' && $rentalConfiguration && $durationMonths) {
+                    $data['id_rental_configuration'] = (int)$rentalConfiguration['id_rental_configuration'];
+                    $data['duration_months'] = $durationMonths;
+                    $data['rate_percentage'] = (float)$rentalConfiguration['selected_rate'];
+
+                    // Calculer le prix mensuel pour ce produit
+                    $monthlyPrice = round(((float)$p['price'] / $durationMonths) * (1 + ((float)$rentalConfiguration['selected_rate'] / 100)), 2);
+                    $data['price'] = $monthlyPrice;
+                } elseif (!empty($p['id_rental_configuration'])) {
                     $data['id_rental_configuration'] = (int)$p['id_rental_configuration'];
                 }
 
@@ -188,7 +215,10 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                     $itemsForEmail[] = [
                         'product_name' => $item['product_name'],
                         'quantity' => $item['quantity'],
-                        'price' => isset($item['price']) ? $item['price'] : 0
+                        'price' => isset($item['price']) ? $item['price'] : 0,
+                        'is_rental' => isset($item['is_rental']) ? $item['is_rental'] : 0,
+                        'duration_months' => isset($item['duration_months']) ? $item['duration_months'] : null,
+                        'item_type' => isset($item['item_type']) ? $item['item_type'] : 'product'
                     ];
                 }
 
