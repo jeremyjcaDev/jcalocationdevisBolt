@@ -10,10 +10,6 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
     {
         header('Content-Type: application/json');
 
-        if (!$this->ajax) {
-            die(json_encode(['success' => false, 'message' => 'Cette action nécessite une requête AJAX']));
-        }
-
         $customer = $this->context->customer;
         if (!$customer->isLogged()) {
             die(json_encode(['success' => false, 'message' => 'Vous devez être connecté']));
