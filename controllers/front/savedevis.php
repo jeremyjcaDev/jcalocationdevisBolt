@@ -29,11 +29,28 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
 
             // Générer le numéro de devis
             $prefix = !empty($settings['quote_number_prefix']) ? $settings['quote_number_prefix'] : 'Q';
-            $sql = 'SELECT MAX(CAST(SUBSTRING(quote_number, ' . (strlen($prefix) + 1) . ') AS UNSIGNED)) as max_num
+            $prefixLength = strlen($prefix) + 1;
+
+            // Récupérer tous les numéros de devis avec ce préfixe
+            $sql = 'SELECT quote_number
                     FROM ' . _DB_PREFIX_ . 'jca_quotes
-                    WHERE quote_number LIKE "' . pSQL($prefix) . '%"';
-            $result = $db->getRow($sql);
-            $nextNumber = ($result && $result['max_num']) ? (int)$result['max_num'] + 1 : 1;
+                    WHERE quote_number LIKE "' . pSQL($prefix) . '%"
+                    ORDER BY id_quote DESC
+                    LIMIT 100';
+            $results = $db->executeS($sql);
+
+            $maxNum = 0;
+            if ($results) {
+                foreach ($results as $row) {
+                    // Extraire la partie numérique
+                    $numPart = substr($row['quote_number'], strlen($prefix));
+                    if (is_numeric($numPart)) {
+                        $maxNum = max($maxNum, (int)$numPart);
+                    }
+                }
+            }
+
+            $nextNumber = $maxNum + 1;
             $quoteNumber = $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
 
             // Calculer la date d'expiration
