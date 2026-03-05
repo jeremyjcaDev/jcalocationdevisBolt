@@ -301,7 +301,7 @@
                         // Récupérer les informations nécessaires
                         const products = Array.from(document.querySelectorAll('[data-product-id]')).map(el => parseInt(el
                             .dataset.productId));
-                        const mode = {$mode}; // Récupération de la durée depuis PHP
+                        const mode = {$mode|intval}; // Récupération de la durée depuis PHP (36 ou 60)
 
                         fetch(prestashop.urls.base_url + 'module/jca_locationdevis/savedevis', {
                                 method: 'POST',
