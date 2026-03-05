@@ -297,11 +297,22 @@
                         btn.disabled = true;
                         btn.textContent = 'Création du devis...';
 
-                        // Récupérer les informations nécessaires
-                        const products = Array.from(document.querySelectorAll('[data-product-id]')).map(el => parseInt(el
-                            .dataset.productId));
+                        // Récupérer les informations nécessaires des produits
                         const mode = {$mode|intval}; // Récupération de la durée depuis PHP (36 ou 60)
                         const ratePercentage = {if isset($rentalConfiguration.selected_rate)}{$rentalConfiguration.selected_rate}{else}0{/if};
+
+                        // Construire le tableau de produits à partir des données PHP
+                        const products = [
+                            {foreach $products as $p}
+                            {
+                                id_product: {$p.id|intval},
+                                name: {$p.name|json_encode},
+                                reference: {$p.reference|json_encode},
+                                price: {$p.price},
+                                quantity: {$p.quantity|intval}
+                            }{if !$p@last},{/if}
+                            {/foreach}
+                        ];
 
                         {literal}
 
@@ -312,7 +323,7 @@
                                 },
                                 body: JSON.stringify({
                                     quote_type: 'rental_only', // Ajout du type de devis
-                                    id_products: products, // Envoi des ID produits
+                                    products: products, // Envoi des produits complets
                                     duration_month: mode, // Envoi de la durée de location
                                     rate_percentage: ratePercentage // Envoi du taux de location
                                 })

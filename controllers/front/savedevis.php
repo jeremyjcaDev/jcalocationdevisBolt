@@ -116,6 +116,10 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 $cart = $this->context->cart;
                 $cartProducts = $cart->getProducts();
 
+                error_log('=== DEBUG PRODUCTS ===');
+                error_log('ID Products from request: ' . json_encode($data['id_products']));
+                error_log('Cart products: ' . json_encode($cartProducts));
+
                 foreach ($data['id_products'] as $productId) {
                     foreach ($cartProducts as $cartProduct) {
                         if ((int)$cartProduct['id_product'] == (int)$productId) {
@@ -130,6 +134,14 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                         }
                     }
                 }
+
+                error_log('Final products array: ' . json_encode($products));
+                error_log('=====================');
+            }
+
+            // Si aucun produit n'a été récupéré, lever une erreur
+            if (empty($products)) {
+                throw new Exception('Aucun produit trouvé pour créer le devis');
             }
 
             // Calculer le total
