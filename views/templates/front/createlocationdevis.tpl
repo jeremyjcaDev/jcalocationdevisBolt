@@ -290,7 +290,6 @@
 
                     if (!btn) return;
 
-{literal}
                     btn.addEventListener('click', function(e) {
                         e.preventDefault();
 
@@ -298,7 +297,6 @@
                         btn.disabled = true;
                         btn.textContent = 'Création du devis...';
 
-                        {/literal}
                         // Récupérer les informations nécessaires des produits
                         const mode = {$mode|intval};
                         const ratePercentage = {if isset($rentalConfiguration.selected_rate)}{$rentalConfiguration.selected_rate}{else}0{/if};
@@ -306,16 +304,16 @@
                         // Construire le tableau de produits à partir des données PHP
                         const products = [
                             {foreach $products as $p}
-                            {
+                            {ldelim}
                                 id_product: {$p.id|intval},
-                                name: {$p.name|json_encode},
-                                reference: {$p.reference|json_encode},
+                                name: {$p.name|json_encode nofilter},
+                                reference: {$p.reference|json_encode nofilter},
                                 price: {$p.price},
                                 quantity: {$p.quantity|intval}
-                            }{if !$p@last},{/if}
+                            {rdelim}{if !$p@last},{/if}
                             {/foreach}
                         ];
-                        {literal}
+{literal}
 
                         console.log('Products array:', products);
                         console.log('Mode:', mode);
