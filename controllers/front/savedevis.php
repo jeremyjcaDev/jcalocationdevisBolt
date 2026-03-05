@@ -249,7 +249,7 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
 
     private function getQuoteSettings()
     {
-        $sql = 'SELECT * FROM `' . _DB_PREFIX_ . 'jca_quote_settings` WHERE 1 LIMIT 1';
+        $sql = 'SELECT * FROM `' . _DB_PREFIX_ . 'jca_quote_settings` LIMIT 1';
         $settings = Db::getInstance()->getRow($sql);
 
         if (!$settings) {
