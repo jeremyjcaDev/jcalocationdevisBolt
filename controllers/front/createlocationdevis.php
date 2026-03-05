@@ -28,7 +28,7 @@ class Jca_locationdevisCreatelocationdevisModuleFrontController extends ModuleFr
                 'firstname' => $customer->firstname,
                 'lastname' => $customer->lastname,
                 'email' => $customer->email,
-                'phone' => !empty($customer->phone_mobile) ? $customer->phone_mobile : $customer->phone,
+                'phone' => !empty($customer->phone_mobile) ? $customer->phone_mobile : '',
             ]
         ]);
 

@@ -35,7 +35,7 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 'quote_type'      => $quoteType, // Utilisation de la valeur récupérée
                 'customer_name'   => pSQL(strtoupper($customer->lastname) . ' ' . $customer->firstname),
                 'customer_email'  => pSQL($customer->email),
-                'customer_phone'  => pSQL($customer->phone ?? ''),
+                'customer_phone'  => pSQL(!empty($customer->phone_mobile) ? $customer->phone_mobile : ''),
                 'status'          => 'pending',
                 'valid_until'     => $validUntil,
                 'date_add'        => $now,
@@ -127,7 +127,7 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 Db::getInstance()->update('jca_quote_customers', [
                     'id_customer_prestashop'  => (int)$customer->id,
                     'name'                    => pSQL($customer->firstname . ' ' . strtoupper($customer->lastname)),
-                    'phone'                   => pSQL($customer->phone ?? ''),
+                    'phone'                   => pSQL(!empty($customer->phone_mobile) ? $customer->phone_mobile : ''),
                     'date_upd'                => $now,
                 ], 'email = "' . pSQL($customer->email) . '"');
             } else {
@@ -137,7 +137,7 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                     'id_customer_prestashop'  => (int)$customer->id,
                     'email'                   => pSQL($customer->email),
                     'name'                    => pSQL($customer->firstname . ' ' . strtoupper($customer->lastname)),
-                    'phone'                   => pSQL($customer->phone ?? ''),
+                    'phone'                   => pSQL(!empty($customer->phone_mobile) ? $customer->phone_mobile : ''),
                     'date_add'                => $now,
                     'date_upd'                => $now,
                 ]);
