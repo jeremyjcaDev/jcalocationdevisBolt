@@ -290,6 +290,7 @@
 
                     if (!btn) return;
 
+{literal}
                     btn.addEventListener('click', function(e) {
                         e.preventDefault();
 
@@ -297,8 +298,9 @@
                         btn.disabled = true;
                         btn.textContent = 'Création du devis...';
 
+                        {/literal}
                         // Récupérer les informations nécessaires des produits
-                        const mode = {$mode|intval}; // Récupération de la durée depuis PHP (36 ou 60)
+                        const mode = {$mode|intval};
                         const ratePercentage = {if isset($rentalConfiguration.selected_rate)}{$rentalConfiguration.selected_rate}{else}0{/if};
 
                         // Construire le tableau de produits à partir des données PHP
@@ -313,7 +315,6 @@
                             }{if !$p@last},{/if}
                             {/foreach}
                         ];
-
                         {literal}
 
                         console.log('Products array:', products);
