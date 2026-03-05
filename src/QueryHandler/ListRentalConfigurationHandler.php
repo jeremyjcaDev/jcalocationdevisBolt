@@ -18,10 +18,6 @@ class ListRentalConfigurationHandler
     {
         $settings = $this->rentalConfigurationRepository->findAll();
 
-        if (empty($settings)) {
-            throw new \Exception('Aucun paramètre trouvé.');
-        }
-
         $result = [];
         foreach ($settings as $setting) {
             $result[] = [
