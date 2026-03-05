@@ -260,6 +260,23 @@
         </div>
 
         <!-- JS AJAX -->
+        <script type="application/json" id="quote-data">
+        {
+            "mode": {$mode|intval},
+            "ratePercentage": {if isset($rentalConfiguration.selected_rate)}{$rentalConfiguration.selected_rate}{else}0{/if},
+            "products": [
+                {foreach $products as $p}
+                {
+                    "id_product": {$p.id|intval},
+                    "name": {$p.name|json_encode nofilter},
+                    "reference": {$p.reference|json_encode nofilter},
+                    "price": {$p.price},
+                    "quantity": {$p.quantity|intval}
+                }{if !$p@last},{/if}
+                {/foreach}
+            ]
+        }
+        </script>
 
 
 
@@ -285,10 +302,23 @@
 
 
             <script>
+{literal}
                 document.addEventListener('DOMContentLoaded', function() {
                     const btn = document.getElementById('submitQuote');
 
                     if (!btn) return;
+
+                    // Récupérer les données JSON injectées
+                    const quoteDataElement = document.getElementById('quote-data');
+                    if (!quoteDataElement) {
+                        console.error('Quote data not found');
+                        return;
+                    }
+
+                    const quoteData = JSON.parse(quoteDataElement.textContent);
+                    const mode = quoteData.mode;
+                    const ratePercentage = quoteData.ratePercentage;
+                    const products = quoteData.products;
 
                     btn.addEventListener('click', function(e) {
                         e.preventDefault();
@@ -296,24 +326,6 @@
                         // On désactive le bouton pour éviter les doubles clics
                         btn.disabled = true;
                         btn.textContent = 'Création du devis...';
-
-                        // Récupérer les informations nécessaires des produits
-                        const mode = {$mode|intval};
-                        const ratePercentage = {if isset($rentalConfiguration.selected_rate)}{$rentalConfiguration.selected_rate}{else}0{/if};
-
-                        // Construire le tableau de produits à partir des données PHP
-                        const products = [
-                            {foreach $products as $p}
-                            {ldelim}
-                                id_product: {$p.id|intval},
-                                name: {$p.name|json_encode nofilter},
-                                reference: {$p.reference|json_encode nofilter},
-                                price: {$p.price},
-                                quantity: {$p.quantity|intval}
-                            {rdelim}{if !$p@last},{/if}
-                            {/foreach}
-                        ];
-{literal}
 
                         console.log('Products array:', products);
                         console.log('Mode:', mode);
@@ -371,8 +383,8 @@
                             });
                     });
                 });
+{/literal}
             </script>
-        {/literal}
 
 
     {/block}
