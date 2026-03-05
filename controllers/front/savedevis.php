@@ -106,6 +106,12 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 $ratePercentage = (float)$data['rate_percentage'];
             }
 
+            // Récupérer l'ID de la configuration de location envoyée depuis le frontend
+            $idRentalConfigFromRequest = null;
+            if (isset($data['id_rental_configuration'])) {
+                $idRentalConfigFromRequest = (int)$data['id_rental_configuration'];
+            }
+
             // Log pour debug
             error_log('=== SAVEDEVIS DEBUG ===');
             error_log('Data received: ' . json_encode($data));
@@ -203,9 +209,15 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
             // Items
             error_log('Inserting items for quote ' . $idQuote . ', products: ' . json_encode($products));
             foreach ($products as $p) {
-                $idRentalConfiguration = isset($p['id_rental_configuration']) ? (int)$p['id_rental_configuration'] : null;
+                // Utiliser l'ID de configuration de location de la requête principale
+                $idRentalConfiguration = $idRentalConfigFromRequest;
 
-                if ($idRentalConfiguration) {
+                // Si pas défini dans la requête principale, essayer de le récupérer depuis le produit
+                if (!$idRentalConfiguration && isset($p['id_rental_configuration'])) {
+                    $idRentalConfiguration = (int)$p['id_rental_configuration'];
+                }
+
+                if ($idRentalConfiguration && !$rentalConfiguration) {
                     $sql = 'SELECT * FROM ' . _DB_PREFIX_ . 'jca_rental_configurations WHERE id_rental_configuration = ' . $idRentalConfiguration;
                     $config = $db->getRow($sql);
                     if ($config) {

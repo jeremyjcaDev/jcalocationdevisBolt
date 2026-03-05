@@ -264,6 +264,7 @@
         {
             "mode": {$mode|intval},
             "ratePercentage": {if isset($rentalConfiguration.selected_rate)}{$rentalConfiguration.selected_rate}{else}0{/if},
+            "idRentalConfiguration": {if isset($rentalConfiguration.id_rental_configuration)}{$rentalConfiguration.id_rental_configuration|intval}{else}null{/if},
             "products": [
                 {foreach $products as $p}
                 {
@@ -318,6 +319,7 @@
                     const quoteData = JSON.parse(quoteDataElement.textContent);
                     const mode = quoteData.mode;
                     const ratePercentage = quoteData.ratePercentage;
+                    const idRentalConfiguration = quoteData.idRentalConfiguration;
                     const products = quoteData.products;
 
                     btn.addEventListener('click', function(e) {
@@ -330,12 +332,14 @@
                         console.log('Products array:', products);
                         console.log('Mode:', mode);
                         console.log('Rate:', ratePercentage);
+                        console.log('ID Rental Config:', idRentalConfiguration);
 
                         const requestData = {
                             quote_type: 'rental_only',
                             products: products,
                             duration_month: mode,
-                            rate_percentage: ratePercentage
+                            rate_percentage: ratePercentage,
+                            id_rental_configuration: idRentalConfiguration
                         };
                         console.log('Sending request:', requestData);
 
