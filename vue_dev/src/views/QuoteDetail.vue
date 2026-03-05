@@ -60,7 +60,7 @@
             </div>
             <div class="info-row">
               <span class="label">Téléphone:</span>
-              <span class="value">{{ quote.customer_phone || '-' }}</span>
+              <span class="value">{{ quote.customer_phone || 'non renseigné' }}</span>
             </div>
           </div>
 

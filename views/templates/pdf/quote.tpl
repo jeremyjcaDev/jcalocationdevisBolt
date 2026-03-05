@@ -94,7 +94,7 @@
         <td width="40%" class="right">
             <strong>{$quote.customer_name}</strong><br>
             {$quote.customer_email}<br>
-            {$quote.customer_phone}
+            {$quote.customer_phone|default:'non renseigné'}
         </td>
     </tr>
 </table>
