@@ -106,11 +106,16 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                 $ratePercentage = (float)$data['rate_percentage'];
             }
 
+            // Log pour debug
+            error_log('=== SAVEDEVIS DEBUG ===');
+            error_log('Data received: ' . json_encode($data));
+
             // Récupérer les produits depuis le panier ou depuis les données envoyées
             $products = [];
             if (isset($data['products']) && !empty($data['products'])) {
                 // Format backend avec produits complets
                 $products = $data['products'];
+                error_log('Products from data[products]: ' . json_encode($products));
             } elseif (isset($data['id_products']) && !empty($data['id_products'])) {
                 // Format frontend avec juste les IDs - récupérer depuis le panier
                 $cart = $this->context->cart;
@@ -196,6 +201,7 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
             $idQuote = (int)$db->Insert_ID();
 
             // Items
+            error_log('Inserting items for quote ' . $idQuote . ', products: ' . json_encode($products));
             foreach ($products as $p) {
                 $idRentalConfiguration = isset($p['id_rental_configuration']) ? (int)$p['id_rental_configuration'] : null;
 
@@ -241,10 +247,13 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                     'date_add' => date('Y-m-d H:i:s')
                 ];
 
+                error_log('Inserting item: ' . json_encode($insertItem));
                 $result = $db->insert('jca_quote_items', $insertItem);
                 if (!$result) {
-                    throw new Exception('Erreur lors de l\'insertion des items');
+                    error_log('FAILED to insert item: ' . $db->getMsgError());
+                    throw new Exception('Erreur lors de l\'insertion des items: ' . $db->getMsgError());
                 }
+                error_log('Item inserted successfully');
             }
 
             // Valider la transaction
