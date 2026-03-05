@@ -181,9 +181,9 @@ class Jca_locationdevisDownloadquoteModuleFrontController extends ModuleFrontCon
         /* LOCATION */
         $location['is_rental'] = $quote['quote_type'] === 'rental_only' ? true : false;
 
-        if ($location['is_rental']) {
-            $location['duration_months'] = $rows[0]['duration_months']; // le meme pour tous  
-            $location['rate_percentage'] = $rows[0]['rate_percentage']; // le meme pour tous
+        if ($location['is_rental'] && !empty($rows)) {
+            $location['duration_months'] = isset($rows[0]['duration_months']) ? $rows[0]['duration_months'] : null;
+            $location['rate_percentage'] = isset($rows[0]['rate_percentage']) ? $rows[0]['rate_percentage'] : null;
             $location['monthly_total'] = 0;
             foreach ($items as $item) {
                 $location['monthly_total'] += $item['monthly_payment'] ?? 0;
