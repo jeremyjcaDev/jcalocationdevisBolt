@@ -188,15 +188,21 @@ class QuoteEmailService
         $itemsHtml = '';
         $total = 0;
         foreach ($items as $item) {
-            $subtotal = $item['quantity'] * $item['price'];
+            $price = isset($item['price']) ? (float)$item['price'] : (isset($item['unit_price']) ? (float)$item['unit_price'] : 0);
+            $quantity = isset($item['quantity']) ? (int)$item['quantity'] : 1;
+            $subtotal = $quantity * $price;
             $total += $subtotal;
             $itemsHtml .= '<tr>
                 <td style="padding: 10px; border-bottom: 1px solid #eee;">' . htmlspecialchars($item['product_name']) . '</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">' . $item['quantity'] . '</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">' . number_format($item['price'], 2, ',', ' ') . ' €</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">' . $quantity . '</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">' . number_format($price, 2, ',', ' ') . ' €</td>
                 <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">' . number_format($subtotal, 2, ',', ' ') . ' €</td>
             </tr>';
         }
+
+        // Gérer les différents formats de date
+        $dateAdd = isset($quote['date_add']) ? $quote['date_add'] : (isset($quote['quote_date']) ? $quote['quote_date'] : date('Y-m-d H:i:s'));
+        $validUntil = isset($quote['valid_until']) ? $quote['valid_until'] : (isset($quote['expiry_date']) ? $quote['expiry_date'] : date('Y-m-d H:i:s', strtotime('+30 days')));
 
         $html = '
         <html>
@@ -206,14 +212,14 @@ class QuoteEmailService
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
                 <h2 style="color: #2c3e50;">Nouveau devis créé</h2>
-                <p>Bonjour ' . htmlspecialchars($quote['customer_name'] ?? 'Client') . ',</p>
+                <p>Bonjour ' . htmlspecialchars($quote['customer_name'] ?? ($quote['customer_firstname'] ?? 'Client')) . ',</p>
                 <p>Votre devis <strong>#' . htmlspecialchars($quote['quote_number']) . '</strong> a bien été créé.</p>
 
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
                     <h3 style="margin-top: 0;">Détails du devis</h3>
-                    <p><strong>Date:</strong> ' . date('d/m/Y', strtotime($quote['date_add'])) . '</p>
-                    <p><strong>Validité:</strong> jusqu\'au ' . date('d/m/Y', strtotime($quote['valid_until'])) . '</p>
-                    <p><strong>Statut:</strong> ' . ucfirst($quote['status']) . '</p>
+                    <p><strong>Date:</strong> ' . date('d/m/Y', strtotime($dateAdd)) . '</p>
+                    <p><strong>Validité:</strong> jusqu\'au ' . date('d/m/Y', strtotime($validUntil)) . '</p>
+                    <p><strong>Statut:</strong> ' . ucfirst($quote['status'] ?? 'pending') . '</p>
                 </div>
 
                 <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">

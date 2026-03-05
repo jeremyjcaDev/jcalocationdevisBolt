@@ -177,9 +177,10 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                     'customer_email' => $customer->email,
                     'customer_firstname' => $customer->firstname,
                     'customer_lastname' => $customer->lastname,
+                    'customer_name' => $customer->firstname . ' ' . strtoupper($customer->lastname),
                     'status' => 'pending',
-                    'quote_date' => $now,
-                    'expiry_date' => $validUntil
+                    'date_add' => $now,
+                    'valid_until' => $validUntil
                 ];
 
                 $itemsForEmail = [];
@@ -187,7 +188,7 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                     $itemsForEmail[] = [
                         'product_name' => $item['product_name'],
                         'quantity' => $item['quantity'],
-                        'unit_price' => $item['price']
+                        'price' => isset($item['price']) ? $item['price'] : 0
                     ];
                 }
 
