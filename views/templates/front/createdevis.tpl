@@ -343,6 +343,7 @@
                                 },
                                 body: JSON.stringify({
                                     quote_type: 'standard',
+                                    id_products: {/literal}{$products|@json_encode nofilter}{literal}.map(p => p.id_product),
                                     delivery: deliveryData
                                 })
                             })
