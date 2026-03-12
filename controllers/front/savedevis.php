@@ -246,6 +246,7 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
 
                 $insertItem = [
                     'id_quote' => $idQuote,
+                    'item_type' => 'product',
                     'id_product' => isset($p['id_product']) ? (int)$p['id_product'] : 0,
                     'product_name' => pSQL($p['name']),
                     'product_reference' => isset($p['reference']) ? pSQL($p['reference']) : '',
@@ -255,9 +256,12 @@ class Jca_locationdevisSavedevisModuleFrontController extends ModuleFrontControl
                     'is_rental' => $isRental ? 1 : 0,
                     'duration_months' => $durationMonths,
                     'rate_percentage' => $itemRate,
-                    'id_rental_configuration' => $idRentalConfiguration,
                     'date_add' => date('Y-m-d H:i:s')
                 ];
+
+                if ($idRentalConfiguration) {
+                    $insertItem['id_rental_configuration'] = (int)$idRentalConfiguration;
+                }
 
                 error_log('Inserting item: ' . json_encode($insertItem));
                 $result = $db->insert('jca_quote_items', $insertItem);
